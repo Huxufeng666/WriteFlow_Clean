@@ -13,6 +13,8 @@ from urllib.parse import urlparse, parse_qs
 import json
 
 class WriteFlowHandler(http.server.SimpleHTTPRequestHandler):
+# class WriteFlowHandler(http.server.BaseHTTPRequestHandler):
+ 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=os.getcwd(), **kwargs)
     
