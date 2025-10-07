@@ -179,7 +179,7 @@
 """
 WriteFlow - AI English Writing Correction Platform
 Compatible with both local and Render deployment.
-"""
+
 
 import http.server
 import socketserver
@@ -332,6 +332,126 @@ def main():
     except Exception as e:
         print(f"❌ Failed to start server: {e}")
         sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()
+"""
+
+#!/usr/bin/env python3
+"""
+WriteFlow - AI English Writing Correction Platform
+Render-compatible HTTP server with functional API
+"""
+
+import http.server
+import socketserver
+import json
+import os
+import random
+
+class WriteFlowHandler(http.server.SimpleHTTPRequestHandler):
+    """Handles both static files and API routes"""
+
+    def end_headers(self):
+        # ✅ 全面 CORS 支持
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization")
+        super().end_headers()
+
+    def do_OPTIONS(self):
+        """Handle preflight CORS requests"""
+        self.send_response(200)
+        self.end_headers()
+
+    def do_GET(self):
+        if self.path == "/health":
+            self.send_json_response({"status": "ok", "message": "WriteFlow backend running."})
+        else:
+            super().do_GET()
+
+    def do_POST(self):
+        if self.path == "/api/correct":
+            self.handle_correction()
+        else:
+            self.send_error(404, "Not Found")
+
+    def handle_correction(self):
+        """Main API logic: receive user input and return AI feedback"""
+        try:
+            length = int(self.headers.get("Content-Length", 0))
+            raw_data = self.rfile.read(length).decode("utf-8")
+            data = json.loads(raw_data)
+
+            content = data.get("content", "")
+            native_language = data.get("nativeLanguage", "ko")
+
+            if not content.strip():
+                msg = (
+                    "작문 내용을 입력해주세요."
+                    if native_language == "ko"
+                    else "请输入写作内容。"
+                )
+                self.send_json_response({"error": msg}, 400)
+                return
+
+            # ✅ 模拟 AI 结果
+            corrected_content = content.replace("teh", "the").replace("adn", "and")
+
+            response = {
+                "corrected_content": corrected_content,
+                "feedback": {
+                    "overall_score": random.randint(70, 95),
+                    "grammar_score": random.randint(65, 90),
+                    "vocabulary_score": random.randint(70, 95),
+                    "coherence_score": random.randint(75, 90),
+                    "corrections": [
+                        {
+                            "original": "teh",
+                            "corrected": "the",
+                            "explanation": (
+                                "拼写错误。" if native_language != "ko" else "맞춤법 오류입니다。"
+                            ),
+                        }
+                    ],
+                    "suggestions": [
+                        "添加更具体的例子。" if native_language != "ko" else "더 구체적인 예시를 추가해보세요。",
+                        "更清晰地连接句子。" if native_language != "ko" else "문장을 더 명확하게 연결해보세요。",
+                    ],
+                    "explanation": (
+                        f"总的来说是一篇不错的写作，总分 {random.randint(80,95)} 分。"
+                        if native_language != "ko"
+                        else f"전반적으로 좋은 작문입니다. 총점 {random.randint(80,95)}점입니다."
+                    ),
+                },
+            }
+
+            self.send_json_response(response)
+
+        except Exception as e:
+            print(f"❌ Error in /api/correct: {e}")
+            self.send_json_response(
+                {"error": f"Server error: {e}"}, 500
+            )
+
+    def send_json_response(self, data, status_code=200):
+        """Utility for sending JSON responses"""
+        self.send_response(status_code)
+        self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.end_headers()
+        self.wfile.write(json.dumps(data, ensure_ascii=False).encode("utf-8"))
+
+
+def main():
+    PORT = int(os.environ.get("PORT", 8000))  # ✅ Render 动态端口
+    print("=" * 60)
+    print(f"🚀 WriteFlow backend starting on port {PORT}")
+    print("✅ Ready for requests at /api/correct and /health")
+    print("=" * 60)
+
+    with socketserver.TCPServer(("", PORT), WriteFlowHandler) as httpd:
+        httpd.serve_forever()
 
 
 if __name__ == "__main__":
