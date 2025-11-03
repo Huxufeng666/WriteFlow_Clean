@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>邮件写作导师 (Email Writing Mentor)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        /* 针对移动设备优化，确保主体内容居中且不拥挤 */
+        .main-container {
+            max-width: 95%;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+        @media (min-width: 640px) {
+            .main-container {
+                max-width: 768px; /* md screen size */
+                padding: 2rem;
+            }
+        }
+        .loading-animation {
+            border-top-color: transparent;
+            animation: spin 1s ease-in-out infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+    <!-- 主容器 -->
+    <div class="main-container">
+        <header class="text-center py-6 bg-white rounded-xl shadow-lg mt-4 mb-8">
+            <h1 id="page-title" class="text-3xl font-bold text-gray-900">邮件写作导师 📧</h1>
+            <p id="page-subtitle" class="mt-2 text-gray-500">一站式解决职场和学术邮件难题</p>
+        </header>
+
+        <!-- 主面板 -->
+        <div id="email-app" class="flex flex-col lg:flex-row gap-6">
+            
+            <!-- 左侧：输入控制面板 -->
+            <div class="lg:w-1/3 p-4 bg-white rounded-xl shadow-lg h-full sticky top-4">
+                <h2 id="params-title" class="text-xl font-semibold mb-4 text-gray-800 border-b pb-2">写作参数</h2>
+                
+                <!-- 模式选择 -->
+                <div class="mb-5">
+                    <label id="mode-label" class="block text-sm font-medium text-gray-700 mb-2">选择功能</label>
+                    <select id="mode-select" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-orange-500 focus:border-orange-500 transition-shadow">
+                        <option value="generate">生成新草稿 (Generate)</option>
+                        <option value="analyze">分析和建议 (Analyze)</option>
+                        <option value="refine">润色和重写 (Refine)</option>
+                    </select>
+                </div>
+                
+                <!-- 仅生成模式可见的字段 -->
+                <div id="generate-fields">
+                    <div class="mb-5">
+                        <label id="recipient-label" for="recipient-select" class="block text-sm font-medium text-gray-700 mb-2">收件人/情境</label>
+                        <select id="recipient-select" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-orange-500 focus:border-orange-500">
+                            <option value="Professor">教授/导师 (Professor/Mentor)</option>
+                            <option value="Manager">经理/老板 (Manager/Boss)</option>
+                            <option value="Client">客户/外部合作方 (Client/Partner)</option>
+                            <option value="Colleague">同事/同学 (Colleague/Classmate)</option>
+                            <option value="Job Application">求职申请 (Job Application)</option>
+                            <option value="Complaint/Request">投诉/正式请求 (Complaint/Request)</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-5">
+                        <label id="tone-label" for="tone-select" class="block text-sm font-medium text-gray-700 mb-2">期望语气</label>
+                        <select id="tone-select" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-orange-500 focus:border-orange-500">
+                            <option value="Formal">正式、专业 (Formal, Professional)</option>
+                            <option value="Casual">非正式、轻松 (Casual, Friendly)</option>
+                            <option value="Persuasive">说服性、有条理 (Persuasive, Organized)</option>
+                            <option value="Concise">简洁、直接 (Concise, Direct)</option>
+                            <option value="Apologetic">致歉、诚恳 (Apologetic, Sincere)</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-5">
+                        <label id="intent-label" for="prompt-input" class="block text-sm font-medium text-gray-700 mb-2">邮件意图（说明你的目的）</label>
+                        <textarea id="prompt-input" rows="4" placeholder="例如：请求教授延长毕业论文提交期限，并说明原因。" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-orange-500 focus:border-orange-500 transition-shadow"></textarea>
+                    </div>
+                </div>
+
+                <!-- 仅分析/润色模式可见的字段 -->
+                <div id="draft-fields" class="hidden">
+                     <div class="mb-5">
+                        <label id="draft-label" for="draft-textarea" class="block text-sm font-medium text-gray-700 mb-2">粘贴您的邮件草稿</label>
+                        <textarea id="draft-textarea" rows="8" placeholder="粘贴完整的邮件内容，包括主题和正文..." class="w-full p-3 border border-gray-300 rounded-lg focus:ring-orange-500 focus:border-orange-500 transition-shadow"></textarea>
+                    </div>
+                    <!-- 仅润色模式可见的字段 -->
+                    <div class="mb-5 hidden" id="refinement-field">
+                        <label id="refinement-label" for="refinement-prompt" class="block text-sm font-medium text-gray-700 mb-2">润色要求（可选）</label>
+                        <input id="refinement-prompt" type="text" placeholder="例如：让语气更委婉；将邮件缩短到100字以内" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-orange-500 focus:border-orange-500 transition-shadow">
+                    </div>
+                </div>
+
+
+                <!-- 提交按钮 -->
+                <button id="submit-button" class="w-full bg-orange-600 text-white p-3 rounded-xl font-semibold hover:bg-orange-700 transition-colors shadow-md" data-lang-key="submit-btn">
+                    开始处理
+                </button>
+            </div>
+
+            <!-- 右侧：结果展示区 -->
+            <div class="lg:w-2/3">
+                <div class="p-6 bg-white rounded-xl shadow-lg min-h-[300px]">
+                    <h2 id="output-title" class="text-xl font-semibold mb-4 text-gray-800 border-b pb-2">输出结果</h2>
+                    
+                    <!-- 结果显示/加载中 -->
+                    <div id="output-area" class="text-gray-700 whitespace-pre-wrap leading-relaxed">
+                        <p id="output-placeholder" class="text-gray-500 text-center py-10">请在左侧选择模式并输入参数，然后点击 "开始处理" 按钮。</p>
+                    </div>
+
+                    <!-- 错误信息 -->
+                    <div id="error-message" class="hidden mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+                        发生错误，请稍后再试。
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Firebase 配置和初始化 (虽然本应用不使用 Firestore，但为了符合 Canvas 规范，保留初始化) ---
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+        
+        // 仅用于满足 Canvas 初始化的要求，本应用不依赖于 Firestore 或 Auth 状态
+        if (firebaseConfig) {
+            import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+            import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+            import { getFirestore } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+            
+            try {
+                const app = initializeApp(firebaseConfig);
+                const db = getFirestore(app);
+                const auth = getAuth(app);
+                
+                const initAuth = async () => {
+                    const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+                    if (initialAuthToken) {
+                        await signInWithCustomToken(auth, initialAuthToken);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+                    console.log("Firebase auth initialized.");
+                };
+                initAuth();
+            } catch (e) {
+                console.error("Firebase init failed:", e);
+            }
+        }
+        
+        // --- 核心 JavaScript 逻辑 ---
+
+        // --- 语言切换逻辑 ---
+        const translations = {
+            zh: {
+                'page-title': '邮件写作导师 📧',
+                'page-subtitle': '一站式解决职场和学术邮件难题',
+                'params-title': '写作参数',
+                'mode-label': '选择功能',
+                'recipient-label': '收件人/情境',
+                'tone-label': '期望语气',
+                'intent-label': '邮件意图（说明你的目的）',
+                'draft-label': '粘贴您的邮件草稿',
+                'refinement-label': '润色要求（可选）',
+                'submit-btn': '开始处理',
+                'output-title': '输出结果',
+                'output-placeholder': '请在左侧选择模式并输入参数，然后点击 "开始处理" 按钮。',
+                'loading-text': 'AI 正在努力撰写中...',
+                'error-intent': '请输入邮件意图。',
+                'error-draft': '请粘贴要分析的邮件草稿。',
+            },
+            ko: {
+                'page-title': '이메일 작성 멘토 📧',
+                'page-subtitle': '직장 및 학술 이메일 문제 원스톱 해결',
+                'params-title': '작성 파라미터',
+                'mode-label': '기능 선택',
+                'recipient-label': '수신자/상황',
+                'tone-label': '원하는 톤',
+                'intent-label': '이메일 목적 (목적 설명)',
+                'draft-label': '이메일 초안 붙여넣기',
+                'refinement-label': '수정 요구사항 (선택 사항)',
+                'submit-btn': '처리 시작',
+                'output-title': '출력 결과',
+                'output-placeholder': '왼쪽에서 모드를 선택하고 파라미터를 입력한 후 "처리 시작" 버튼을 클릭하세요.',
+                'loading-text': 'AI가 열심히 작성 중입니다...',
+                'error-intent': '이메일 목적을 입력해주세요.',
+                'error-draft': '분석할 이메일 초안을 붙여넣어 주세요.',
+            }
+        };
+
+        function setLanguage(lang) {
+            const t = translations[lang];
+            Object.keys(t).forEach(key => {
+                const element = document.getElementById(key);
+                if (element) {
+                    element.textContent = t[key];
+                }
+            });
+            // 更新占位符
+            document.getElementById('prompt-input').placeholder = lang === 'ko' ? '예: 교수님께 졸업 논문 제출 기한 연장을 요청하고 이유를 설명하세요.' : '例如：请求教授延长毕业论文提交期限，并说明原因。';
+        }
+        
+        // API 密钥和 URL（在 Canvas 环境中会自动提供）
+        const apiKey = ""; 
+        const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+
+        // 元素引用
+        const modeSelect = document.getElementById('mode-select');
+        const generateFields = document.getElementById('generate-fields');
+        const draftFields = document.getElementById('draft-fields');
+        const refinementField = document.getElementById('refinement-field');
+        const submitButton = document.getElementById('submit-button');
+        const outputArea = document.getElementById('output-area');
+        const errorMessage = document.getElementById('error-message');
+
+        const recipientSelect = document.getElementById('recipient-select');
+        const toneSelect = document.getElementById('tone-select');
+        const promptInput = document.getElementById('prompt-input');
+        const draftTextarea = document.getElementById('draft-textarea');
+        const refinementPrompt = document.getElementById('refinement-prompt');
+
+        // --- UI 状态管理 ---
+        modeSelect.addEventListener('change', () => {
+            const mode = modeSelect.value;
+            generateFields.classList.add('hidden');
+            draftFields.classList.add('hidden');
+            refinementField.classList.add('hidden');
+
+            if (mode === 'generate') {
+                generateFields.classList.remove('hidden');
+            } else {
+                draftFields.classList.remove('hidden');
+                if (mode === 'refine') {
+                    refinementField.classList.remove('hidden');
+                }
+            }
+            outputArea.innerHTML = `<p id="output-placeholder" class="text-gray-500 text-center py-10">${translations[localStorage.getItem('writeflow_language') || 'zh']['output-placeholder']}</p>`;
+        });
+
+        // 初始化UI
+        modeSelect.dispatchEvent(new Event('change'));
+
+        // --- API 调用和主逻辑 ---
+        let retryCount = 0;
+        const MAX_RETRIES = 5;
+
+        async function fetchWithRetry(payload) {
+            let delay = 1000;
+            while (retryCount < MAX_RETRIES) {
+                try {
+                    const response = await fetch(API_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (response.ok) {
+                        retryCount = 0; // 重置计数器
+                        return response.json();
+                    } else if (response.status === 429 || response.status >= 500) {
+                        // 处理速率限制和服务器错误
+                        throw new Error(`API Error: ${response.status}`);
+                    } else {
+                         // 其他客户端错误，不重试
+                        console.error("Non-retryable API error:", response.status);
+                        return response.json();
+                    }
+                } catch (error) {
+                    retryCount++;
+                    if (retryCount >= MAX_RETRIES) {
+                        throw new Error("API请求失败，已达到最大重试次数。");
+                    }
+                    console.log(`Retrying in ${delay / 1000}s...`);
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    delay *= 2; // 指数退避
+                }
+            }
+        }
+
+        async function handleEmailProcessing() {
+            errorMessage.classList.add('hidden');
+            outputArea.innerHTML = `<div class="flex flex-col items-center justify-center py-10">
+                                        <div class="loading-animation w-8 h-8 border-4 border-orange-500 rounded-full mb-3"></div>
+                                        <p class="text-orange-600 font-medium">AI 正在努力撰写中...</p>
+                                    </div>`;
+            submitButton.disabled = true;
+
+            const mode = modeSelect.value;
+            let systemPrompt = "";
+            let userQuery = "";
+            
+            const currentLang = localStorage.getItem('writeflow_language') || 'zh';
+            // --- 构造提示词和系统指令 ---
+            try {
+                if (mode === 'generate') {
+                    const recipient = recipientSelect.value;
+                    const tone = toneSelect.value;
+                    const intent = promptInput.value.trim();
+                    
+                    if (!intent) throw new Error(translations[currentLang]['error-intent']);
+
+                    systemPrompt = "你是一位专业的邮件写作助理。请根据用户提供的意图、收件人和语气，生成一封完整、结构清晰且得体的邮件（包括主题、称谓、正文和署名）。所有输出必须使用中文。";
+                    userQuery = `请为以下情境撰写邮件：
+- 收件人/情境: ${recipient}
+- 期望语气: ${tone}
+- 意图说明: ${intent}
+请直接输出邮件内容，不需要额外说明。`;
+                } else if (mode === 'analyze') {
+                    const draft = draftTextarea.value.trim();
+                    if (!draft) throw new Error(translations[currentLang]['error-draft']);
+
+                    systemPrompt = "你是一位专业的邮件分析师。请对用户提供的邮件草稿进行全面评估。评估内容包括：主题清晰度、语气得体性、正文结构和语言的专业度。请以'邮件分析报告'开头，然后提供一个整体评价，最后用**分点列表**给出3-5条具体的修改建议。";
+                    userQuery = `请分析并给出改进建议:\n\n${draft}`;
+
+                } else if (mode === 'refine') {
+                    const draft = draftTextarea.value.trim();
+                    const refinement = refinementPrompt.value.trim() || "润色，使其更流畅、更专业";
+                    if (!draft) throw new Error(translations[currentLang]['error-draft']);
+                    
+                    systemPrompt = "你是一位专业的邮件润色专家。请根据用户的要求，重写并优化用户提供的邮件。确保重写后的邮件结构完整，语气得体。";
+                    userQuery = `请根据以下要求重写邮件:\n
+- 原始邮件:\n${draft}\n
+- 润色要求: ${refinement}\n
+请直接输出重写后的完整邮件内容，不需要额外说明。`;
+                }
+            } catch (e) {
+                outputArea.innerHTML = `<p class="text-red-600 text-center py-10">${e.message}</p>`;
+                submitButton.disabled = false;
+                return;
+            }
+
+            const payload = {
+                contents: [{ parts: [{ text: userQuery }] }],
+                systemInstruction: { parts: [{ text: systemPrompt }] },
+            };
+
+            try {
+                const result = await fetchWithRetry(payload);
+                
+                const candidate = result.candidates?.[0];
+                const generatedText = candidate?.content?.parts?.[0]?.text;
+
+                if (generatedText) {
+                    // 将 Markdown 格式的输出转换为 HTML
+                    const formattedHtml = formatAsHtml(generatedText);
+                    outputArea.innerHTML = formattedHtml;
+                } else {
+                    throw new Error("API 返回了空内容或结构异常。");
+                }
+            } catch (error) {
+                console.error("Gemini API调用失败:", error);
+                errorMessage.textContent = `处理失败: ${error.message || '网络连接或API服务异常。'}`;
+                errorMessage.classList.remove('hidden');
+                outputArea.innerHTML = `<p class="text-red-600 text-center py-10">AI 处理请求时遇到问题，请检查输入或稍后再试。</p>`;
+            } finally {
+                submitButton.disabled = false;
+            }
+        }
+
+        // 简易 Markdown 到 HTML 转换函数 (用于美化输出)
+        function formatAsHtml(text) {
+            // 粗体
+            let html = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            // 标题 (H2)
+            html = html.replace(/^##\s*(.*)$/gm, '<h3 class="text-xl font-bold mt-4 mb-2">$1</h3>');
+            // 标题 (H3)
+            html = html.replace(/^#\s*(.*)$/gm, '<h2 class="text-2xl font-bold mt-4 mb-2">$1</h2>');
+            // 列表
+            html = html.replace(/^\*\s*(.*)$/gm, '<li class="list-disc ml-6">$1</li>');
+            html = html.replace(/<li>/g, '<ul>$&</ul>');
+            // 换行
+            html = html.replace(/\n/g, '<br>');
+            
+            // 移除多余的 <ul> 标签嵌套
+            html = html.replace(/<\/ul><ul>/g, '');
+
+            // 包裹段落
+            html = html.replace(/^(?!<h|ul|li|strong>)(.*?)<br>/gm, '<p class="mb-3">$1</p>');
+            
+            return html;
+        }
+
+
+        // 绑定事件
+        submitButton.addEventListener('click', handleEmailProcessing);
+
+        // 页面加载时初始化语言
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedLanguage = localStorage.getItem('writeflow_language') || 'zh';
+            setLanguage(savedLanguage);
+        });
+    </script>
+</body>
+</html>

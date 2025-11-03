@@ -46,6 +46,26 @@
                         </div>
                     </a>
                 </div>
+                <!-- Language Selector -->
+                <div class="flex items-center space-x-2 bg-gray-100 rounded-lg p-1">
+                    <i data-lucide="globe" class="w-4 h-4 text-gray-500 ml-2"></i>
+                    <button
+                        id="btn-ko"
+                        onclick="setLanguage('ko')"
+                        class="px-3 py-1 rounded-md text-sm font-medium transition-colors text-gray-600 hover:text-gray-800"
+                    >
+                        한국어
+                    </button>
+                    <button
+                        id="btn-zh"
+                        onclick="setLanguage('zh')"
+                        class="px-3 py-1 rounded-md text-sm font-medium transition-colors bg-white text-blue-600 shadow-sm"
+                    >
+                        中文
+                    </button>
+                </div>
+                <!-- 添加与 index.html 相同的历史记录按钮 -->
+                <button id="history-btn" class="menu-btn ml-4 text-gray-600 hover:text-blue-600" title="历史记录"><i data-lucide="history"></i></button>
             </div>
         </div>
     </header>
@@ -62,6 +82,10 @@
                     <i data-lucide="trending-up" class="w-4 h-4 inline mr-2"></i>
                     <span id="nav-progress">进度追踪</span>
                 </button>
+                <a href="/daily-sentence.html" class="nav-tab px-6 py-3 font-medium text-gray-700 rounded-t-lg inline-flex items-center">
+                    <i data-lucide="calendar-check" class="w-4 h-4 inline mr-2"></i>
+                    <span>每日一句</span>
+                </a>
             </div>
         </div>
     </div>
@@ -126,15 +150,27 @@
                             <i data-lucide="check-circle" class="w-6 h-6 text-green-600"></i>
                             <h3 class="text-xl font-semibold text-gray-800" id="corrected-title">批改后的内容</h3>
                         </div>
-                        <div class="bg-gray-50 rounded-xl p-4 border-l-4 border-green-500">
-                            <p id="corrected-content" class="text-gray-800 leading-relaxed whitespace-pre-wrap"></p>
+                        <!-- 结果视图切换标签 -->
+                        <div class="border-b border-gray-200 mb-4">
+                            <nav class="flex space-x-4" aria-label="Tabs">
+                                <button id="tab-diff" class="px-3 py-2 font-medium text-sm rounded-t-lg border-b-2 border-blue-600 text-blue-600">全文纠错</button>
+                                <button id="tab-polish" class="px-3 py-2 font-medium text-sm rounded-t-lg border-b-2 border-transparent text-gray-500 hover:text-gray-700">全文润色</button>
+                            </nav>
+                        </div>
+                        <!-- 纠错视图 -->
+                        <div id="diff-view-container" class="bg-gray-50 rounded-xl p-4">
+                            <p id="diff-view" class="text-gray-800 leading-relaxed whitespace-pre-wrap"></p>
+                        </div>
+                        <!-- 润色视图 -->
+                        <div id="polish-view-container" class="hidden bg-gray-50 rounded-xl p-4">
+                            <p id="polished-content" class="text-gray-800 leading-relaxed whitespace-pre-wrap"></p>
                         </div>
                     </div>
 
                     <!-- Feedback -->
                     <div id="feedback-section" class="hidden bg-white rounded-2xl shadow-lg p-8">
                         <div class="flex items-center space-x-3 mb-6">
-                            <i data-lucide="star" class="w-6 h-6 text-yellow-600"></i>
+                            <i data-lucide="star" class="w-6 h-6 text-yellow-500"></i>
                             <h3 class="text-xl font-semibold text-gray-800" id="feedback-title">详细反馈</h3>
                         </div>
 
@@ -296,9 +332,30 @@
         </div>
     </footer>
 
+    <!-- 添加与 index.html 相同的历史记录侧边栏和遮罩层 -->
+    <div id="history-sidebar" class="sidebar fixed top-0 right-[-320px] w-[300px] h-full bg-white shadow-lg z-[1002] transition-all duration-300 ease-in-out flex flex-col">
+        <div class="sidebar-header flex justify-between items-center p-4 border-b">
+            <h3 id="history-title" class="text-lg font-semibold">历史记录</h3>
+            <button id="close-sidebar-btn" class="close-btn text-2xl">&times;</button>
+        </div>
+        <div class="sidebar-content flex-grow overflow-y-auto p-2">
+            <ul id="history-list">
+                <!-- History items will be populated by JS -->
+            </ul>
+        </div>
+    </div>
+    <div id="sidebar-overlay" class="overlay hidden fixed top-0 left-0 w-full h-full bg-black/40 z-[1001]"></div>
+
+    <!-- 错误解释 Tooltip -->
+    <div id="explanation-tooltip" class="hidden absolute bg-gray-800 text-white text-xs rounded py-1 px-2 z-50 shadow-lg"></div>
+
+    <!-- 引入通用脚本 -->
+    <script src="common.js"></script>
+
     <script>
         // Initialize Lucide icons
         lucide.createIcons();
+        // 保留页面特有的逻辑
 
         let currentLanguage = 'zh';
         let isCorrecting = false;
@@ -307,10 +364,10 @@
         let radarChart = null;
         
         // 新增元素获取
-        const historyBtn = document.getElementById('history-btn');
-        const historySidebar = document.getElementById('history-sidebar');
-        const closeHistoryBtn = document.getElementById('close-history-btn');
-        const historyOverlay = document.getElementById('history-overlay');
+        // const historyBtn = document.getElementById('history-btn'); // 已移至 common.js
+        // const historySidebar = document.getElementById('history-sidebar'); // 已移至 common.js
+        // const closeHistoryBtn = document.getElementById('close-history-btn'); // 已移至 common.js
+        // const historyOverlay = document.getElementById('history-overlay'); // 已移至 common.js
         const historyListContainer = document.getElementById('history-list-container');
         const explanationTooltip = document.getElementById('explanation-tooltip');
 
@@ -394,8 +451,10 @@
 
         function setLanguage(lang) {
             currentLanguage = lang;
+            localStorage.setItem('writeflow_language', lang); // 保存语言设置
             
             // Update button states
+            // 注意：common.js 也会处理一部分按钮状态，这里是针对 correction.html 特有的按钮样式
             document.getElementById('btn-ko').className = lang === 'ko' 
                 ? 'px-3 py-1 rounded-md text-sm font-medium transition-colors bg-white text-blue-600 shadow-sm'
                 : 'px-3 py-1 rounded-md text-sm font-medium transition-colors text-gray-600 hover:text-gray-800';
@@ -426,8 +485,19 @@
             if (currentTab === 'progress') {
                 renderProgressCharts();
             }
+
+            // Re-render icons
+            lucide.createIcons();
         }
 
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            // 语言初始化已由 common.js 处理
+            // const savedLanguage = localStorage.getItem('writeflow_language') || 'zh';
+            // setLanguage(savedLanguage);
+            lucide.createIcons();
+        });
+        
         function switchTab(tab) {
             currentTab = tab;
             
@@ -711,13 +781,6 @@
                 renderCorrectionHistory(); // 重新渲染
             }
         });
-
-        const openHistorySidebar = () => { renderCorrectionHistory(); historySidebar.classList.add('active'); historyOverlay.style.display = 'block'; };
-        const closeHistorySidebar = () => { historySidebar.classList.remove('active'); historyOverlay.style.display = 'none'; };
-
-        historyBtn.addEventListener('click', openHistorySidebar);
-        closeHistoryBtn.addEventListener('click', closeHistorySidebar);
-        historyOverlay.addEventListener('click', closeHistorySidebar);
 
         function saveToHistory(feedback) {
             // This function is now for chart data only

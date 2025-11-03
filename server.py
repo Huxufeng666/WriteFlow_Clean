@@ -35,6 +35,11 @@ class WriteFlowHandler(http.server.SimpleHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(b"OK")
             return
+        if self.path == "/daily-sentence.html":
+            return super().do_GET()
+        if self.path == "/email-mentor.html":
+            return super().do_GET()
+            
         # Serve static files (index.html, css, js, etc.)
         super().do_GET()
 
