@@ -10,7 +10,6 @@ import socketserver
 import os
 import sys
 import json
-import random
 import webbrowser
 
 class WriteFlowHandler(http.server.SimpleHTTPRequestHandler):
@@ -35,11 +34,8 @@ class WriteFlowHandler(http.server.SimpleHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(b"OK")
             return
-        if self.path == "/daily-sentence.html":
+        if self.path in ["/daily-sentence.html", "/email-mentor.html"]:
             return super().do_GET()
-        if self.path == "/email-mentor.html":
-            return super().do_GET()
-            
         # Serve static files (index.html, css, js, etc.)
         super().do_GET()
 
@@ -50,11 +46,11 @@ class WriteFlowHandler(http.server.SimpleHTTPRequestHandler):
             self.send_error(404)
 
     def handle_correction(self):
+        native_language = "ko"  # Default to Korean
         try:
             length = int(self.headers.get("Content-Length", 0))
             post_data = self.rfile.read(length)
             data = json.loads(post_data.decode("utf-8"))
-
             content = data.get("content", "")
             native_language = data.get("nativeLanguage", "ko")
 
@@ -81,37 +77,40 @@ class WriteFlowHandler(http.server.SimpleHTTPRequestHandler):
         # 2. 生成“全文润色”后的内容
         polished_content = "From my perspective, technology has profoundly reshaped our existence in numerous aspects. Primarily, it facilitates easier and more rapid communication, enabling us to connect with individuals across the globe instantaneously via the internet."
 
-        overall = random.randint(70, 95)
-        grammar = random.randint(65, 90)
-        vocab = random.randint(70, 95)
-        coherence = random.randint(75, 90)
+        overall = 85
+        grammar = 90
+        vocab = 80
+        coherence = 85
 
         corrections = []
         if "teh" in content:
             corrections.append({
                 "original": "teh",
                 "corrected": "the",
-                "explanation": "拼写错误。" if native_language == "zh" else "맞춤법 오류입니다."
+                "explanation": "맞춤법 오류입니다." if native_language == "ko" else "拼写错误。"
             })
         if "adn" in content:
             corrections.append({
                 "original": "adn",
                 "corrected": "and",
-                "explanation": "拼写错误。" if native_language == "zh" else "맞춤법 오류입니다."
+                "explanation": "맞춤법 오류입니다." if native_language == "ko" else "拼写错误。"
             })
 
         suggestions = [
-            "添加更具体的例子。" if native_language == "zh" else "더 구체적인 예시를 추가해보세요.",
-            "更清晰地连接句子。" if native_language == "zh" else "문장을 더 명확하게 연결해보세요."
+            "더 구체적인 예시를 추가해보세요." if native_language == "ko" else "添加更具体的例子。",
+            "문장을 더 명확하게 연결해보세요." if native_language == "ko" else "更清晰地连接句子。"
         ]
 
-        explanation = (
-            f"总的来说是一篇不错的写作。总分{overall}分。语法{grammar}分，词汇{vocab}分，连贯性{coherence}分。"
-            f"修正一些小错误会让写作更加完美。"
-        ) if native_language == "zh" else (
+        if native_language == "ko":
+            explanation = (
             f"전반적으로 좋은 작문입니다. 전체 점수 {overall}점, 문법 {grammar}점, 어휘 {vocab}점, 일관성 {coherence}점입니다."
             f"몇 가지 작은 오류를 수정하면 더욱 완벽한 작문이 될 것입니다."
-        )
+            )
+        else:
+            explanation = (
+            f"总的来说是一篇不错的写作。总分{overall}分。语法{grammar}分，词汇{vocab}分，连贯性{coherence}分。"
+            f"修正一些小错误会让写作更加完美。"
+            )
 
         return {
             "corrected_content": corrected,

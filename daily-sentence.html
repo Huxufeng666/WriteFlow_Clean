@@ -89,6 +89,7 @@
                 comments: [],
                 commentsLoading: true,
                 filterByMe: false,
+                currentLanguage: 'zh',
             };
 
             const appContainer = document.getElementById('app-container');
@@ -102,7 +103,7 @@
                         <!-- Header -->
                         <div class="bg-gradient-to-br from-orange-500 to-red-400 shadow-xl pb-12 rounded-b-3xl">
                             <header class="flex justify-between items-center p-4 pt-8 text-white">
-                                <a href="/"><i data-lucide="chevron-left" class="w-6 h-6"></i></a>
+                                <a href="/index.html"><i data-lucide="chevron-left" class="w-6 h-6"></i></a>
                                 <h1 class="text-xl font-bold">每日一句</h1>
                                 <div class="flex space-x-4">
                                     <i data-lucide="book-open" class="w-6 h-6"></i>
@@ -164,17 +165,20 @@
             }
 
             function renderTabs(activeTab) {
-                const tabs = [
-                    { id: 'translation', name: '参考译文' }, { id: 'structure', name: '句子结构' },
-                    { id: 'expressions', name: '必备表达' }, { id: 'grammar', name: '重点语法' },
-                    { id: 'discussion', name: '讨论区' },
-                ];
+                const t = {
+                    zh: { translation: '参考译文', structure: '句子结构', expressions: '必备表达', grammar: '重点语法', discussion: '讨论区' },
+                    ko: { translation: '참고 번역', structure: '문장 구조', expressions: '필수 표현', grammar: '핵심 문법', discussion: '토론장' }
+                };
+                const tabNames = t[state.currentLanguage];
+
+                const tabs = ['translation', 'structure', 'expressions', 'grammar', 'discussion'];
+
                 return `
                     <div class="flex overflow-x-auto border-b border-gray-100 bg-white sticky top-0 z-10 shadow-sm px-4">
-                        ${tabs.map(tab => `
-                            <button data-tab-id="${tab.id}" class="tab-btn py-3 px-4 text-sm font-medium whitespace-nowrap transition-colors duration-200 relative ${activeTab === tab.id ? 'text-black font-semibold' : 'text-gray-500 hover:text-gray-700'}">
-                                ${tab.name}
-                                ${activeTab === tab.id ? '<span class="absolute bottom-0 left-1/2 -translate-x-1/2 w-5 h-0.5 bg-orange-600 rounded-full"></span>' : ''}
+                        ${tabs.map(tabId => `
+                            <button data-tab-id="${tabId}" class="tab-btn py-3 px-4 text-sm font-medium whitespace-nowrap transition-colors duration-200 relative ${activeTab === tabId ? 'text-black font-semibold' : 'text-gray-500 hover:text-gray-700'}">
+                                ${tabNames[tabId]}
+                                ${activeTab === tabId ? '<span class="absolute bottom-0 left-1/2 -translate-x-1/2 w-5 h-0.5 bg-orange-600 rounded-full"></span>' : ''}
                             </button>
                         `).join('')}
                     </div>
@@ -182,29 +186,32 @@
             }
 
             function renderContentArea(activeTab, data) {
-                const titleClass = "text-xl font-bold text-gray-800 border-l-4 border-orange-500 pl-3 mb-4 mt-8";
-                const subTitleClass = "font-semibold text-lg text-orange-700 mb-2 border-b pb-1 border-orange-200";
+                const t = {
+                    zh: { titleClass: "text-xl font-bold text-gray-800 border-l-4 border-orange-500 pl-3 mb-4 mt-8", subTitleClass: "font-semibold text-lg text-orange-700 mb-2 border-b pb-1 border-orange-200", translationTitle: "参考译文 (韩文和中文)", chineseTitle: "中文译文 (Chinese)", koreanTitle: "韩文译文 (Korean)", structureTitle: "句子结构", originalSentence: "原句：", expressionsTitle: "必备表达", grammarTitle: "重点语法", discussionTitle: "讨论区", emptyStructure: "暂无句子结构解析。", emptyExpressions: "暂无必备表达。", emptyGrammar: "暂无重点语法解析。", emptyDefault: "选择一个 Tab 查看详细解析。" },
+                    ko: { titleClass: "text-xl font-bold text-gray-800 border-l-4 border-orange-500 pl-3 mb-4 mt-8", subTitleClass: "font-semibold text-lg text-orange-700 mb-2 border-b pb-1 border-orange-200", translationTitle: "참고 번역 (한국어 및 중국어)", chineseTitle: "중국어 번역 (Chinese)", koreanTitle: "한국어 번역 (Korean)", structureTitle: "문장 구조", originalSentence: "원문:", expressionsTitle: "필수 표현", grammarTitle: "핵심 문법", discussionTitle: "토론장", emptyStructure: "문장 구조 분석이 없습니다.", emptyExpressions: "필수 표현이 없습니다.", emptyGrammar: "핵심 문법 분석이 없습니다。", emptyDefault: "탭을 선택하여 상세 분석을 확인하세요." }
+                };
+                const text = t[state.currentLanguage];
 
                 switch (activeTab) {
                     case 'translation':
                         return `
                             <div class="space-y-8">
-                                <h2 class="${titleClass}">参考译文 (韩文和中文)</h2>
+                                <h2 class="${text.titleClass}">${text.translationTitle}</h2>
                                 <div class="p-4 bg-orange-50/50 rounded-xl shadow-inner border border-orange-100">
-                                    <h3 class="${subTitleClass}">中文译文 (Chinese)</h3>
+                                    <h3 class="${text.subTitleClass}">${text.chineseTitle}</h3>
                                     <p class="text-gray-800 leading-relaxed">${data.translation.chinese || '暂无中文译文'}</p>
                                 </div>
                                 <div class="p-4 bg-orange-50/50 rounded-xl shadow-inner border border-orange-100">
-                                    <h3 class="${subTitleClass}">韩文译文 (Korean)</h3>
+                                    <h3 class="${text.subTitleClass}">${text.koreanTitle}</h3>
                                     <p class="text-gray-600 italic leading-relaxed">${data.translation.korean || "暂无韩文译文"}</p>
                                 </div>
                             </div>`;
                     case 'structure':
                         return `
                             <div class="space-y-4">
-                                <h2 class="${titleClass}">句子结构</h2>
+                                <h2 class="${text.titleClass}">${text.structureTitle}</h2>
                                 <div class="text-sm border p-3 rounded-xl bg-yellow-50/50 border-yellow-200">
-                                    <p class="font-bold text-orange-600 mb-1">原句：</p>
+                                    <p class="font-bold text-orange-600 mb-1">${text.originalSentence}</p>
                                     <p class="text-gray-800 leading-relaxed font-serif text-lg p-2 bg-white rounded-lg border border-gray-100">${data.sentence}</p>
                                 </div>
                                 ${data.structure.length > 0 ? data.structure.map(item => `
@@ -212,12 +219,12 @@
                                         <span class="inline-block font-bold text-sm text-gray-800">${item.type}:</span>
                                         <p class="text-gray-600 font-mono text-sm mt-1">${item.text}</p>
                                     </div>
-                                `).join('') : '<p class="text-center text-gray-500 pt-10">暂无句子结构解析。</p>'}
+                                `).join('') : `<p class="text-center text-gray-500 pt-10">${text.emptyStructure}</p>`}
                             </div>`;
                     case 'expressions':
                          return `
                             <div class="space-y-4">
-                                <h2 class="${titleClass}">必备表达</h2>
+                                <h2 class="${text.titleClass}">${text.expressionsTitle}</h2>
                                 ${data.expressions.length > 0 ? data.expressions.map(item => `
                                     <div class="p-4 bg-white border border-gray-100 rounded-xl shadow-sm">
                                         <div class="flex justify-between items-start">
@@ -232,12 +239,12 @@
                                             ${item.meaning}
                                         </p>
                                     </div>
-                                `).join('') : '<p class="text-center text-gray-500 pt-10">暂无必备表达。</p>'}
+                                `).join('') : `<p class="text-center text-gray-500 pt-10">${text.emptyExpressions}</p>`}
                             </div>`;
                     case 'grammar':
                         return `
                             <div class="space-y-4">
-                                <h2 class="${titleClass}">重点语法</h2>
+                                <h2 class="${text.titleClass}">${text.grammarTitle}</h2>
                                 ${data.grammar.length > 0 ? data.grammar.map((item, index) => `
                                     <div class="p-4 bg-white border border-gray-200 rounded-xl shadow-sm">
                                         <h4 class="font-bold text-orange-700 text-base mb-1 flex items-center">
@@ -246,7 +253,7 @@
                                         </h4>
                                         <p class="text-gray-700 text-sm leading-relaxed mt-2">${item.content}</p>
                                     </div>
-                                `).join('') : '<p class="text-center text-gray-500 pt-10">暂无重点语法解析。</p>'}
+                                `).join('') : `<p class="text-center text-gray-500 pt-10">${text.emptyGrammar}</p>`}
                             </div>`;
                     case 'discussion':
                         return renderDiscussionArea();
@@ -275,7 +282,7 @@
                 if (state.commentsLoading) {
                     commentsHtml = `<div class="flex justify-center items-center h-40"><i data-lucide="loader-2" class="w-6 h-6 animate-spin text-orange-500"></i></div>`;
                 } else if (state.comments.length === 0) {
-                    commentsHtml = `<p class="text-center text-gray-500 py-10">${state.filterByMe ? "您还没有发表评论。" : "暂无评论，快来抢沙发吧！"}</p>`;
+                    commentsHtml = `<p class="text-center text-gray-500 py-10">${state.filterByMe ? (state.currentLanguage === 'ko' ? "아직 댓글을 작성하지 않았습니다." : "您还没有发表评论。") : (state.currentLanguage === 'ko' ? "댓글이 없습니다. 첫 댓글을 작성해보세요!" : "暂无评论，快来抢沙发吧！")}</p>`;
                 } else {
                     const visibleComments = state.filterByMe ? state.comments.filter(c => c.userId === state.userId) : state.comments;
                     commentsHtml = `
@@ -301,15 +308,15 @@
                     <div class="bg-white min-h-[300px] border border-gray-100 rounded-xl shadow-lg mt-8">
                         <div class="p-4 flex justify-between items-center border-b border-gray-100">
                             <h3 class="text-xl font-bold text-gray-800 flex items-center">
-                                <i data-lucide="message-square" class="w-5 h-5 mr-2 text-orange-500"></i>讨论区 (${state.comments.length})
+                                <i data-lucide="message-square" class="w-5 h-5 mr-2 text-orange-500"></i>${state.currentLanguage === 'ko' ? '토론장' : '讨论区'} (${state.comments.length})
                             </h3>
                             <div class="flex items-center text-sm text-gray-500">
-                                <span class="mr-2">只看我</span>
+                                <span class="mr-2">${state.currentLanguage === 'ko' ? '내 댓글만 보기' : '只看我'}</span>
                                 <input type="checkbox" id="filter-by-me-checkbox" ${state.filterByMe ? 'checked' : ''} class="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500 cursor-pointer"/>
                             </div>
                         </div>
                         ${commentsHtml}
-                        <form id="comment-form" class="p-4 border-t border-gray-100 mt-4 flex gap-2">
+                        <form id="comment-form" class="p-4 border-t border-gray-100 flex gap-2">
                             <input type="text" id="comment-input" placeholder="发表你的学习心得或疑问..." class="flex-grow p-3 border border-gray-300 rounded-full focus:ring-orange-500 focus:border-orange-500 text-sm"/>
                             <button type="submit" class="bg-orange-500 text-white p-3 rounded-full shadow-md hover:bg-orange-600 transition duration-150 disabled:opacity-50 flex items-center justify-center">
                                 <i data-lucide="send" class="w-5 h-5"></i>
@@ -365,7 +372,7 @@
                                 ${daysOfWeek.map(day => `<div class="py-2 text-gray-400">${day}</div>`).join('')}
                                 ${dayCells}
                             </div>
-                            <div class="p-4 text-center text-sm text-gray-500 border-t mt-4">点击标记的日期即可免费查看往期句子。</div>
+                            <div class="p-4 text-center text-sm text-gray-500 border-t">${state.currentLanguage === 'ko' ? '표시된 날짜를 클릭하여 이전 문장을 무료로 볼 수 있습니다.' : '点击标记的日期即可免费查看往期句子。'}</div>
                         </div>
                     </div>`;
             }
@@ -377,13 +384,7 @@
                     btn.addEventListener('click', (e) => {
                         const tabId = e.currentTarget.dataset.tabId;
                         state.activeTab = tabId;
-                        const currentData = mockSentences.find(s => s.date === state.currentDate) || mockSentences[0];
-                        document.getElementById('content-area').innerHTML = renderContentArea(tabId, currentData);
-                        lucide.createIcons();
-                        // Re-render tabs to update active state
-                        const tabsContainer = document.querySelector('.flex.overflow-x-auto');
-                        if (tabsContainer) tabsContainer.outerHTML = renderTabs(state.activeTab);
-                        addEventListeners(); // Re-add listeners for new tab buttons
+                        render();
                     });
                 });
 
@@ -435,12 +436,12 @@
             // --- Firebase 和讨论区逻辑 ---
             let unsubscribeComments = null;
 
-            function initializeFirebase() {
-                if (!firebaseConfig) {
-                    console.error("Firebase config is missing.");
+            function initializeApp() {
+                state.currentLanguage = localStorage.getItem('writeflow_language') || 'zh';
+
+                if (!firebaseConfig || !firebaseConfig.apiKey || firebaseConfig.apiKey === "YOUR_API_KEY") {
+                    console.warn("Firebase config is missing or incomplete. Using mock auth.");
                     state.isAuthReady = true;
-                    state.userId = crypto.randomUUID();
-                    state.userName = '匿名用户';
                     render();
                     return;
                 }
@@ -452,10 +453,10 @@
                     firebase.auth().onAuthStateChanged(user => {
                         if (user) {
                             state.userId = user.uid;
-                            state.userName = `用户${user.uid.substring(0, 8)}`;
+                            state.userName = user.displayName || `User-${user.uid.substring(0, 6)}`;
                         } else {
-                            state.userId = crypto.randomUUID();
-                            state.userName = '匿名用户';
+                            state.userId = null;
+                            state.userName = null;
                         }
                         state.isAuthReady = true;
                         listenToComments();
@@ -473,7 +474,7 @@
 
             function listenToComments() {
                 if (unsubscribeComments) unsubscribeComments(); // Unsubscribe from old listener
-                if (!state.db || !state.userId) return;
+                if (!state.db) return;
 
                 const currentData = mockSentences.find(s => s.date === state.currentDate) || mockSentences[0];
                 const commentsCollectionPath = `artifacts/default-app-id/public/data/daily_sentence_comments_${currentData.date.replace(/\./g, '-')}`;
@@ -502,7 +503,7 @@
                 e.preventDefault();
                 const input = document.getElementById('comment-input');
                 const text = input.value.trim();
-                if (!state.db || !state.userId || text === '') return;
+                if (!state.db || !state.userId || !state.userName || text === '') return;
 
                 const currentData = mockSentences.find(s => s.date === state.currentDate) || mockSentences[0];
                 const commentsCollectionPath = `artifacts/default-app-id/public/data/daily_sentence_comments_${currentData.date.replace(/\./g, '-')}`;
@@ -538,8 +539,7 @@
             }
 
             // --- 初始化 ---
-            initializeFirebase();
-            render();
+            initializeApp();
         });
     </script>
 </body>
