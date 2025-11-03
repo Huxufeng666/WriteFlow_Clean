@@ -1,296 +1,99 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="zh-CN">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>WriteFlow - AI 영어 작문 교정</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
-  <style>
-    .gradient-text {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-    .fade-in { animation: fadeIn 0.5s ease-in; }
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>英语作文通</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
+<body>
 
-<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
-  <!-- Header -->
-  <header class="bg-white shadow-lg">
-    <div class="container mx-auto px-4 py-4 flex justify-between items-center">
-      <div class="flex items-center space-x-3">
-        <div class="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
-          <span class="text-white font-bold text-xl">W</span>
+    <header class="top-bar">
+        <div class="learning-target">
+            <select>
+                <option id="target-high-school">高中生</option>
+                <option id="target-university">大学生</option>
+                <option id="target-professional">职场人士</option>
+            </select>
         </div>
-        <div>
-          <h1 class="text-2xl font-bold gradient-text">WriteFlow</h1>
-          <p class="text-sm text-gray-600" id="header-subtitle">AI 영어 작문 교정</p>
+        <h1 class="title" id="app-title">英语作文通</h1>
+        <div class="menu">
+            <div class="lang-switcher">
+                <button id="btn-zh" class="lang-btn">中文</button>
+                <button id="btn-ko" class="lang-btn">한국어</button>
+            </div>
+            <button id="history-btn" class="menu-btn" title="历史记录"><i class="fas fa-history"></i></button>
+            <button id="settings-btn" class="menu-btn" title="设置"><i class="fas fa-cog"></i></button>
         </div>
-      </div>
-      <div class="flex items-center space-x-2 bg-gray-100 rounded-lg p-1">
-        <i data-lucide="globe" class="w-4 h-4 text-gray-500"></i>
-        <button id="btn-ko" class="px-3 py-1 rounded-md text-sm font-medium bg-white text-blue-600 shadow-sm">한국어</button>
-        <button id="btn-zh" class="px-3 py-1 rounded-md text-sm font-medium text-gray-600 hover:text-gray-800">中文</button>
-      </div>
+    </header>
+
+    <main class="card-container">
+        <div class="card card-ai-writing">
+            <div class="card-icon"><i class="fas fa-robot"></i></div>
+            <h2 id="card-title-ai-writing">AI 写作</h2>
+            <p id="card-desc-ai-writing">输入主题，AI为你生成范文</p>
+        </div>
+
+        <div class="card card-assistant">
+            <div class="card-icon"><i class="fas fa-magic-wand-sparkles"></i></div>
+            <h2 id="card-title-assistant">写作助手</h2>
+            <p id="card-desc-assistant">AI 助你轻松写作 — 造句，写邮件</p>
+        </div>
+
+        <a href="/correction.html" class="card-link">
+            <div class="card card-correction">
+                <div class="card-icon"><i class="fas fa-spell-check"></i></div>
+                <h2 id="card-title-correction">写作批改</h2>
+                <p id="card-desc-correction">上传作文，获取专业批改建议</p>
+            </div>
+        </a>
+
+        <div class="card card-daily-quote">
+            <div class="card-icon"><i class="fas fa-quote-right"></i></div>
+            <h2 id="card-title-daily-quote">每日金句</h2>
+            <p id="card-desc-daily-quote">每天一句，积累写作素材</p>
+        </div>
+    </main>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="settings-title">设置</h2>
+                <span class="close-btn">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="setting-item">
+                    <span id="setting-dark-mode">护眼模式</span>
+                    <label class="switch">
+                        <input type="checkbox" id="dark-mode-toggle">
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+                <div class="setting-item">
+                    <span id="setting-clear-history">清空历史记录</span>
+                    <button class="clear-btn" id="clear-history-btn">清空</button>
+                </div>
+            </div>
+        </div>
     </div>
-  </header>
 
-  <!-- Main -->
-  <main class="container mx-auto px-4 py-8">
-    <div class="text-center mb-12 fade-in">
-      <h2 class="text-4xl font-bold text-gray-800 mb-4" id="main-title">영어 작문 AI 교정</h2>
-      <p class="text-lg text-gray-600 max-w-2xl mx-auto" id="main-description">
-        ChatGPT가 당신의 영어 작문을 교정하고 상세한 피드백을 제공합니다.
-      </p>
+    <!-- History Sidebar -->
+    <div id="history-sidebar" class="sidebar">
+        <div class="sidebar-header">
+            <h3 id="history-title">历史记录</h3>
+            <button id="close-sidebar-btn" class="close-btn">&times;</button>
+        </div>
+        <div class="sidebar-content">
+            <ul id="history-list">
+                <!-- History items will be populated by JS -->
+            </ul>
+        </div>
     </div>
+    <div id="sidebar-overlay" class="overlay"></div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-      <!-- Left: input -->
-      <div class="space-y-6">
-        <div class="bg-white rounded-2xl shadow-lg p-8 fade-in">
-          <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center space-x-2">
-            <i data-lucide="book-open" class="w-5 h-5 text-blue-600"></i>
-            <span id="input-title">영어 작문 입력</span>
-          </h3>
+    <script src="script.js"></script>
 
-          <textarea id="writing-input" class="w-full h-80 p-4 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none resize-none text-gray-800"
-            placeholder="여기에 영어로 작문해보세요..."></textarea>
-
-          <div class="flex items-center justify-between mt-4">
-            <span class="text-sm text-gray-500"><span id="word-count-label">단어 수</span>: <span id="word-count">0</span></span>
-            <button id="correct-btn"
-              class="flex items-center space-x-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl font-medium hover:from-blue-700 hover:to-purple-700 shadow-lg transition-all">
-              <i data-lucide="send" class="w-5 h-5"></i>
-              <span id="correct-btn-text">교정하기</span>
-            </button>
-          </div>
-        </div>
-
-        <div id="error-message" class="hidden bg-red-50 border border-red-200 rounded-xl p-4 fade-in">
-          <div class="flex items-center space-x-2">
-            <i data-lucide="alert-circle" class="w-5 h-5 text-red-600"></i>
-            <p class="text-red-700" id="error-text"></p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Right: results -->
-      <div class="space-y-6">
-        <div id="corrected-section" class="hidden bg-white rounded-2xl shadow-lg p-8 fade-in">
-          <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center space-x-2">
-            <i data-lucide="check-circle" class="w-6 h-6 text-green-600"></i>
-            <span id="corrected-title">교정된 내용</span>
-          </h3>
-          <p id="corrected-content" class="bg-gray-50 rounded-xl p-4 text-gray-800 whitespace-pre-wrap"></p>
-        </div>
-
-        <div id="feedback-section" class="hidden bg-white rounded-2xl shadow-lg p-8 fade-in">
-          <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center space-x-2">
-            <i data-lucide="star" class="w-6 h-6 text-yellow-600"></i>
-            <span id="feedback-title">상세 피드백</span>
-          </h3>
-          <div class="grid grid-cols-2 gap-4 mb-4">
-            <div class="bg-blue-100 rounded-xl p-4 text-center">
-              <div class="text-2xl font-bold text-blue-600" id="overall-score-value">0</div>
-              <div id="overall-score-label" class="text-sm">전체 점수</div>
-            </div>
-            <div class="bg-blue-100 rounded-xl p-4 text-center">
-              <div class="text-2xl font-bold text-blue-600" id="grammar-score-value">0</div>
-              <div id="grammar-score-label" class="text-sm">문법 점수</div>
-            </div>
-            <div class="bg-blue-100 rounded-xl p-4 text-center">
-              <div class="text-2xl font-bold text-blue-600" id="vocabulary-score-value">0</div>
-              <div id="vocabulary-score-label" class="text-sm">어휘 점수</div>
-            </div>
-            <div class="bg-blue-100 rounded-xl p-4 text-center">
-              <div class="text-2xl font-bold text-blue-600" id="coherence-score-value">0</div>
-              <div id="coherence-score-label" class="text-sm">일관성 점수</div>
-            </div>
-          </div>
-
-          <div>
-            <h4 id="explanation-title" class="font-semibold text-gray-800 mb-2">전체 평가</h4>
-            <p id="explanation-text" class="text-gray-700 bg-yellow-50 p-4 rounded-xl"></p>
-          </div>
-
-          <div>
-            <h4 id="corrections-title" class="font-semibold text-gray-800 mb-2">교정 사항</h4>
-            <div id="corrections-list" class="space-y-2"></div>
-          </div>
-
-          <div>
-            <h4 id="suggestions-title" class="font-semibold text-gray-800 mb-2">개선 제안</h4>
-            <ul id="suggestions-list" class="space-y-1"></ul>
-          </div>
-        </div>
-      </div>
-    </div>
-  </main>
-
-  <footer class="bg-white border-t border-gray-200 mt-16 py-6 text-center text-sm text-gray-500">
-    Powered by WriteFlow © 2025
-  </footer>
-
-  <script>
-    lucide.createIcons();
-
-    let currentLanguage = 'ko';
-    let isCorrecting = false;
-
-    const translations = {
-      ko: {
-        'header-subtitle': 'AI 영어 작문 교정',
-        'main-title': '영어 작문 AI 교정',
-        'main-description': 'ChatGPT가 당신의 영어 작문을 교정하고 상세한 피드백을 제공합니다.',
-        'input-title': '영어 작문 입력',
-        'input-placeholder': '여기에 영어로 작문해보세요...',
-        'word-count-label': '단어 수',
-        'correct-btn-text': '교정하기',
-        'correcting-text': '교정 중...',
-        'corrected-title': '교정된 내용',
-        'feedback-title': '상세 피드백',
-        'overall-score-label': '전체 점수',
-        'grammar-score-label': '문법 점수',
-        'vocabulary-score-label': '어휘 점수',
-        'coherence-score-label': '일관성 점수',
-        'explanation-title': '전체 평가',
-        'corrections-title': '교정 사항',
-        'suggestions-title': '개선 제안',
-        'error-empty': '작문 내용을 입력해주세요.',
-        'error-server': 'AI 교정 중 오류가 발생했습니다.'
-      },
-      zh: {
-        'header-subtitle': 'AI英语写作批改',
-        'main-title': '英语写作AI批改',
-        'main-description': 'ChatGPT将为您批改英语写作并提供详细反馈。',
-        'input-title': '英语写作输入',
-        'input-placeholder': '请在这里用英语写作...',
-        'word-count-label': '字数',
-        'correct-btn-text': '批改',
-        'correcting-text': '批改中...',
-        'corrected-title': '批改后的内容',
-        'feedback-title': '详细反馈',
-        'overall-score-label': '总分',
-        'grammar-score-label': '语法分数',
-        'vocabulary-score-label': '词汇分数',
-        'coherence-score-label': '连贯性分数',
-        'explanation-title': '总体评价',
-        'corrections-title': '批改事项',
-        'suggestions-title': '改进建议',
-        'error-empty': '请输入写作内容。',
-        'error-server': 'AI批改过程中出现错误，请重试。'
-      }
-    };
-
-    function setLanguage(lang) {
-      currentLanguage = lang;
-      const t = translations[lang];
-      document.getElementById('btn-ko').className =
-        lang === 'ko' ? 'px-3 py-1 rounded-md text-sm font-medium bg-white text-blue-600 shadow-sm' :
-                        'px-3 py-1 rounded-md text-sm font-medium text-gray-600 hover:text-gray-800';
-      document.getElementById('btn-zh').className =
-        lang === 'zh' ? 'px-3 py-1 rounded-md text-sm font-medium bg-white text-blue-600 shadow-sm' :
-                        'px-3 py-1 rounded-md text-sm font-medium text-gray-600 hover:text-gray-800';
-
-      for (const key in t) {
-        const el = document.getElementById(key);
-        if (el) el.textContent = t[key];
-      }
-      document.getElementById('writing-input').placeholder = t['input-placeholder'];
-    }
-
-    function updateWordCount() {
-      const content = document.getElementById('writing-input').value;
-      const count = content.trim() ? content.trim().split(/\s+/).length : 0;
-      document.getElementById('word-count').textContent = count;
-    }
-
-    function showError(msg) {
-      document.getElementById('error-text').textContent = msg;
-      const box = document.getElementById('error-message');
-      box.classList.remove('hidden');
-      setTimeout(() => box.classList.add('hidden'), 4000);
-    }
-
-    function setLoading(loading) {
-      isCorrecting = loading;
-      const btn = document.getElementById('correct-btn');
-      const span = document.getElementById('correct-btn-text');
-      span.textContent = translations[currentLanguage][loading ? 'correcting-text' : 'correct-btn-text'];
-      btn.disabled = loading;
-      if (loading) btn.classList.add('opacity-50');
-      else btn.classList.remove('opacity-50');
-    }
-
-    async function handleCorrection() {
-      const content = document.getElementById('writing-input').value.trim();
-      if (!content) {
-        showError(translations[currentLanguage]['error-empty']);
-        return;
-      }
-      setLoading(true);
-      try {
-        const res = await fetch('/api/correct', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ content, nativeLanguage: currentLanguage })
-        });
-        if (!res.ok) throw new Error('API error');
-        const data = await res.json();
-        displayResults(data);
-      } catch (e) {
-        console.error(e);
-        showError(translations[currentLanguage]['error-server']);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    function displayResults(data) {
-      document.getElementById('corrected-section').classList.remove('hidden');
-      document.getElementById('feedback-section').classList.remove('hidden');
-      document.getElementById('corrected-content').textContent = data.corrected_content;
-      const fb = data.feedback;
-      document.getElementById('overall-score-value').textContent = fb.overall_score;
-      document.getElementById('grammar-score-value').textContent = fb.grammar_score;
-      document.getElementById('vocabulary-score-value').textContent = fb.vocabulary_score;
-      document.getElementById('coherence-score-value').textContent = fb.coherence_score;
-      document.getElementById('explanation-text').textContent = fb.explanation;
-
-      const cList = document.getElementById('corrections-list');
-      cList.innerHTML = '';
-      fb.corrections.forEach(c => {
-        const div = document.createElement('div');
-        div.className = 'bg-red-50 border p-3 rounded';
-        div.innerHTML = `<b>${c.original}</b> → <b class="text-green-700">${c.corrected}</b><br><small>${c.explanation}</small>`;
-        cList.appendChild(div);
-      });
-
-      const sList = document.getElementById('suggestions-list');
-      sList.innerHTML = '';
-      fb.suggestions.forEach(s => {
-        const li = document.createElement('li');
-        li.textContent = s;
-        sList.appendChild(li);
-      });
-    }
-
-    document.addEventListener('DOMContentLoaded', () => {
-      lucide.createIcons();
-      setLanguage('ko');
-      updateWordCount();
-      document.getElementById('btn-ko').addEventListener('click', () => setLanguage('ko'));
-      document.getElementById('btn-zh').addEventListener('click', () => setLanguage('zh'));
-      document.getElementById('writing-input').addEventListener('input', updateWordCount);
-      document.getElementById('correct-btn').addEventListener('click', handleCorrection);
-    });
-  </script>
 </body>
 </html>

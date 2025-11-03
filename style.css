@@ -1,0 +1,295 @@
+/* 基本样式和变量 */
+:root {
+    --bg-color: #f0f2f5;
+    --card-bg-color: #ffffff;
+    --text-color: #333;
+    --primary-color: #4a90e2;
+    --border-color: #e0e0e0;
+    --shadow-color: rgba(0, 0, 0, 0.1);
+    --header-bg: #ffffff;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    margin: 0;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    transition: background-color 0.3s, color 0.3s;
+}
+
+/* 护眼模式/暗黑模式 */
+body.dark-mode {
+    --bg-color: #1a1a1a;
+    --card-bg-color: #2c2c2c;
+    --text-color: #e0e0e0;
+    --border-color: #444;
+    --shadow-color: rgba(0, 0, 0, 0.3);
+    --header-bg: #2c2c2c;
+}
+
+/* 顶部栏 */
+.top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+    background-color: var(--header-bg);
+    box-shadow: 0 2px 4px var(--shadow-color);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    transition: background-color 0.3s;
+}
+
+.title {
+    font-size: 1.5em;
+    margin: 0;
+}
+
+.learning-target select, .menu-btn {
+    background-color: transparent;
+    border: 1px solid var(--border-color);
+    padding: 8px 12px;
+    border-radius: 8px;
+    color: var(--text-color);
+    cursor: pointer;
+}
+
+.menu {
+    display: flex;
+    gap: 10px;
+}
+
+.menu-btn {
+    font-size: 1.2em;
+    border: none;
+    padding: 8px;
+}
+
+/* 语言切换器 */
+.lang-switcher {
+    display: flex;
+    background-color: #e9ecef;
+    border-radius: 8px;
+    padding: 4px;
+    margin-right: 10px;
+}
+
+.lang-btn {
+    background-color: transparent;
+    border: none;
+    padding: 4px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9em;
+    color: #555;
+    transition: all 0.3s ease;
+}
+
+.lang-btn.active {
+    background-color: var(--card-bg-color);
+    color: var(--primary-color);
+    font-weight: bold;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+/* 卡片容器和卡片 */
+.card-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    padding: 20px;
+    gap: 20px;
+}
+
+.card {
+    border-radius: 12px;
+    box-shadow: 0 4px 8px var(--shadow-color);
+    padding: 20px;
+    text-align: center;
+    width: 220px;
+    transition: transform 0.2s, box-shadow 0.2s, background-color 0.3s;
+    cursor: pointer;
+}
+
+/* 卡片渐变色 */
+.card-ai-writing {
+    background: linear-gradient(135deg, #4a90e2, #50e3c2);
+}
+.card-assistant {
+    background: linear-gradient(135deg, #8A2BE2, #BA55D3);
+}
+.card-correction {
+    background: linear-gradient(135deg, #34A853, #B8E986);
+}
+.card-daily-quote {
+    background: linear-gradient(135deg, #F5A623, #F8E71C);
+}
+
+/* 统一调整渐变色卡片内的文字和图标颜色 */
+.card h2, .card p {
+    color: #ffffff;
+}
+
+.card p {
+    opacity: 0.85;
+}
+
+.card .card-icon {
+    color: #ffffff;
+}
+
+.card-link {
+    text-decoration: none;
+    color: inherit;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 16px var(--shadow-color);
+}
+
+body.dark-mode .card p {
+    /* 在暗黑模式下，白色文字已经很清晰，无需额外调整 */
+    color: #ffffff;
+    opacity: 0.85;
+}
+
+/* 模态框 */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1001;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    background-color: var(--card-bg-color);
+    padding: 20px;
+    border-radius: 10px;
+    width: 90%;
+    max-width: 400px;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+.close-btn {
+    font-size: 1.5em;
+    cursor: pointer;
+}
+
+.setting-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+/* 开关 Switch */
+.switch { position: relative; display: inline-block; width: 50px; height: 28px; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; }
+.slider.round { border-radius: 28px; }
+.slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+input:checked + .slider { background-color: var(--primary-color); }
+input:checked + .slider:before { transform: translateX(22px); }
+
+/* 侧边栏 */
+.sidebar {
+    position: fixed;
+    top: 0;
+    right: -320px; /* Start off-screen */
+    width: 300px;
+    height: 100%;
+    background-color: var(--card-bg-color);
+    box-shadow: -2px 0 8px rgba(0,0,0,0.15);
+    z-index: 1002;
+    transition: right 0.3s ease-in-out;
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar.active {
+    right: 0;
+}
+
+.sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.sidebar-header h3 {
+    margin: 0;
+    font-size: 1.2em;
+}
+
+.sidebar-content {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: 10px 0;
+}
+
+#history-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+#history-list li a {
+    display: block;
+    padding: 12px 20px;
+    text-decoration: none;
+    color: var(--text-color);
+    border-bottom: 1px solid var(--border-color);
+    transition: background-color 0.2s;
+}
+
+#history-list li a:hover {
+    background-color: var(--bg-color);
+}
+
+.overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background-color: rgba(0,0,0,0.4);
+    z-index: 1001;
+}
+
+/* 响应式布局 */
+@media (max-width: 600px) {
+    .top-bar {
+        flex-wrap: wrap;
+        padding: 10px;
+    }
+    .title {
+        order: -1; /* 将标题放在最前 */
+        width: 100%;
+        text-align: center;
+        margin-bottom: 10px;
+        font-size: 1.3em;
+    }
+    .card-container {
+        padding: 15px;
+        gap: 15px;
+    }
+    .card {
+        width: calc(50% - 30px); /* 每行两个 */
+    }
+}

@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WriteFlow - AI 英语作文批改</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <style>
+        .gradient-text {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .nav-tab {
+            transition: all 0.3s ease;
+        }
+        .nav-tab.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
+    <!-- Header -->
+    <header class="bg-white shadow-lg">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <a href="/" class="flex items-center space-x-3" title="返回主页">
+                        <div class="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
+                            <span class="text-white font-bold text-xl">W</span>
+                        </div>
+                        <div>
+                            <h1 class="text-2xl font-bold gradient-text">WriteFlow</h1>
+                            <p class="text-sm text-gray-600" id="header-subtitle">AI英语写作批改</p>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <div class="bg-white border-b border-gray-200">
+        <div class="container mx-auto px-4">
+            <div class="flex space-x-1">
+                <button onclick="switchTab('writing')" id="tab-writing" class="nav-tab active px-6 py-3 font-medium text-gray-700 rounded-t-lg">
+                    <i data-lucide="edit-3" class="w-4 h-4 inline mr-2"></i>
+                    <span id="nav-writing">写作练习</span>
+                </button>
+                <button onclick="switchTab('progress')" id="tab-progress" class="nav-tab px-6 py-3 font-medium text-gray-700 rounded-t-lg">
+                    <i data-lucide="trending-up" class="w-4 h-4 inline mr-2"></i>
+                    <span id="nav-progress">进度追踪</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8">
+        <!-- Writing Practice Tab -->
+        <div id="content-writing" class="fade-in">
+            <!-- Title -->
+            <div class="text-center mb-12">
+                <h2 class="text-4xl font-bold text-gray-800 mb-4" id="main-title">英语写作AI批改</h2>
+                <p class="text-lg text-gray-600 max-w-2xl mx-auto" id="main-description">
+                    AI将为您批改英语写作并提供详细反馈。
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Input Section -->
+                <div class="space-y-6">
+                    <div class="bg-white rounded-2xl shadow-lg p-8">
+                        <div class="flex items-center space-x-3 mb-6">
+                            <i data-lucide="book-open" class="w-6 h-6 text-blue-600"></i>
+                            <h3 class="text-xl font-semibold text-gray-800" id="input-title">英语写作输入</h3>
+                        </div>
+                        
+                        <textarea
+                            id="writing-input"
+                            placeholder="请在这里用英语写作...\n\n示例:\nI think that technology has changed our lives in many ways. First of all, it makes communication easier and faster. We can talk to people all over the world instantly through teh internet."
+                            class="w-full h-80 p-4 border-2 border-gray-200 rounded-xl resize-none focus:border-blue-500 focus:outline-none transition-colors text-gray-800"
+                            oninput="updateWordCount()"
+                        ></textarea>
+                        
+                        <div class="flex items-center justify-between mt-4">
+                            <div class="text-sm text-gray-500">
+                                <span id="word-count-label">字数</span>: <span id="word-count">0</span>
+                            </div>
+                            <button
+                                id="correct-btn"
+                                onclick="handleCorrection()"
+                                class="flex items-center space-x-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl font-medium hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+                            >
+                                <i data-lucide="send" class="w-5 h-5"></i>
+                                <span id="correct-btn-text">批改</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Error Message -->
+                    <div id="error-message" class="hidden bg-red-50 border border-red-200 rounded-xl p-4">
+                        <div class="flex items-center space-x-2">
+                            <i data-lucide="alert-circle" class="w-5 h-5 text-red-600"></i>
+                            <p class="text-red-700" id="error-text"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Results Section -->
+                <div class="space-y-6">
+                    <!-- Corrected Content -->
+                    <div id="corrected-section" class="hidden bg-white rounded-2xl shadow-lg p-8">
+                        <div class="flex items-center space-x-3 mb-6">
+                            <i data-lucide="check-circle" class="w-6 h-6 text-green-600"></i>
+                            <h3 class="text-xl font-semibold text-gray-800" id="corrected-title">批改后的内容</h3>
+                        </div>
+                        <div class="bg-gray-50 rounded-xl p-4 border-l-4 border-green-500">
+                            <p id="corrected-content" class="text-gray-800 leading-relaxed whitespace-pre-wrap"></p>
+                        </div>
+                    </div>
+
+                    <!-- Feedback -->
+                    <div id="feedback-section" class="hidden bg-white rounded-2xl shadow-lg p-8">
+                        <div class="flex items-center space-x-3 mb-6">
+                            <i data-lucide="star" class="w-6 h-6 text-yellow-600"></i>
+                            <h3 class="text-xl font-semibold text-gray-800" id="feedback-title">详细反馈</h3>
+                        </div>
+
+                        <!-- Scores -->
+                        <div class="grid grid-cols-2 gap-4 mb-6">
+                            <div id="overall-score" class="bg-blue-100 rounded-xl p-4 text-center">
+                                <div class="text-2xl font-bold mb-1">
+                                    <span class="text-blue-600" id="overall-score-value">0</span>
+                                    <span class="text-gray-600 text-lg">/100</span>
+                                </div>
+                                <div class="text-sm font-medium text-gray-700" id="overall-score-label">总分</div>
+                            </div>
+                            <div id="grammar-score" class="bg-blue-100 rounded-xl p-4 text-center">
+                                <div class="text-2xl font-bold mb-1">
+                                    <span class="text-blue-600" id="grammar-score-value">0</span>
+                                    <span class="text-gray-600 text-lg">/100</span>
+                                </div>
+                                <div class="text-sm font-medium text-gray-700" id="grammar-score-label">语法分数</div>
+                            </div>
+                            <div id="vocabulary-score" class="bg-blue-100 rounded-xl p-4 text-center">
+                                <div class="text-2xl font-bold mb-1">
+                                    <span class="text-blue-600" id="vocabulary-score-value">0</span>
+                                    <span class="text-gray-600 text-lg">/100</span>
+                                </div>
+                                <div class="text-sm font-medium text-gray-700" id="vocabulary-score-label">词汇分数</div>
+                            </div>
+                            <div id="coherence-score" class="bg-blue-100 rounded-xl p-4 text-center">
+                                <div class="text-2xl font-bold mb-1">
+                                    <span class="text-blue-600" id="coherence-score-value">0</span>
+                                    <span class="text-gray-600 text-lg">/100</span>
+                                </div>
+                                <div class="text-sm font-medium text-gray-700" id="coherence-score-label">连贯性分数</div>
+                            </div>
+                        </div>
+
+                        <!-- Overall Explanation -->
+                        <div class="mb-6">
+                            <h4 class="font-semibold text-gray-800 mb-3 flex items-center space-x-2">
+                                <i data-lucide="lightbulb" class="w-5 h-5 text-yellow-500"></i>
+                                <span id="explanation-title">总体评价</span>
+                            </h4>
+                            <p id="explanation-text" class="text-gray-700 leading-relaxed bg-yellow-50 p-4 rounded-xl"></p>
+                        </div>
+
+                        <!-- Corrections -->
+                        <div id="corrections-section" class="mb-6">
+                            <h4 class="font-semibold text-gray-800 mb-3" id="corrections-title">批改事项</h4>
+                            <div id="corrections-list" class="space-y-3"></div>
+                        </div>
+
+                        <!-- Suggestions -->
+                        <div id="suggestions-section">
+                            <h4 class="font-semibold text-gray-800 mb-3" id="suggestions-title">改进建议</h4>
+                            <ul id="suggestions-list" class="space-y-2"></ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Progress Tracking Tab -->
+        <div id="content-progress" class="hidden fade-in">
+            <div class="text-center mb-12">
+                <h2 class="text-4xl font-bold text-gray-800 mb-4" id="progress-title">学习进度追踪</h2>
+                <p class="text-lg text-gray-600 max-w-2xl mx-auto" id="progress-description">
+                    可视化您的英语写作技能提升
+                </p>
+            </div>
+
+            <!-- Stats Overview -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                <div class="bg-white rounded-2xl shadow-lg p-6 text-center">
+                    <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i data-lucide="file-text" class="w-6 h-6 text-blue-600"></i>
+                    </div>
+                    <div class="text-3xl font-bold text-gray-800 mb-2" id="total-writings">0</div>
+                    <div class="text-sm text-gray-600" id="total-writings-label">总写作数</div>
+                </div>
+                <div class="bg-white rounded-2xl shadow-lg p-6 text-center">
+                    <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i data-lucide="trending-up" class="w-6 h-6 text-green-600"></i>
+                    </div>
+                    <div class="text-3xl font-bold text-gray-800 mb-2" id="avg-score">0</div>
+                    <div class="text-sm text-gray-600" id="avg-score-label">平均分数</div>
+                </div>
+                <div class="bg-white rounded-2xl shadow-lg p-6 text-center">
+                    <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i data-lucide="target" class="w-6 h-6 text-purple-600"></i>
+                    </div>
+                    <div class="text-3xl font-bold text-gray-800 mb-2" id="best-score">0</div>
+                    <div class="text-sm text-gray-600" id="best-score-label">最高分数</div>
+                </div>
+                <div class="bg-white rounded-2xl shadow-lg p-6 text-center">
+                    <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i data-lucide="calendar" class="w-6 h-6 text-orange-600"></i>
+                    </div>
+                    <div class="text-3xl font-bold text-gray-800 mb-2" id="days-active">0</div>
+                    <div class="text-sm text-gray-600" id="days-active-label">学习天数</div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                <!-- Score Trend Chart -->
+                <div class="bg-white rounded-2xl shadow-lg p-8">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-6 flex items-center">
+                        <i data-lucide="line-chart" class="w-6 h-6 text-blue-600 mr-2"></i>
+                        <span id="trend-chart-title">分数趋势</span>
+                    </h3>
+                    <canvas id="trendChart" height="250"></canvas>
+                </div>
+
+                <!-- Skill Radar Chart -->
+                <div class="bg-white rounded-2xl shadow-lg p-8">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-6 flex items-center">
+                        <i data-lucide="activity" class="w-6 h-6 text-purple-600 mr-2"></i>
+                        <span id="radar-chart-title">能力分析</span>
+                    </h3>
+                    <canvas id="radarChart" height="250"></canvas>
+                </div>
+            </div>
+
+            <!-- Weak Areas -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Weakest Areas -->
+                <div class="bg-white rounded-2xl shadow-lg p-8">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-6 flex items-center">
+                        <i data-lucide="alert-triangle" class="w-6 h-6 text-red-600 mr-2"></i>
+                        <span id="weak-areas-title">需要改进的领域</span>
+                    </h3>
+                    <div id="weak-areas-list" class="space-y-4"></div>
+                </div>
+
+                <!-- Improvement Areas -->
+                <div class="bg-white rounded-2xl shadow-lg p-8">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-6 flex items-center">
+                        <i data-lucide="award" class="w-6 h-6 text-green-600 mr-2"></i>
+                        <span id="improvement-title">改进的领域</span>
+                    </h3>
+                    <div id="improvement-list" class="space-y-4"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-gray-200 mt-16">
+        <div class="container mx-auto px-4 py-8">
+            <div class="text-center">
+                <div class="flex items-center justify-center space-x-3 mb-4">
+                    <div class="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+                        <span class="text-white font-bold">W</span>
+                    </div>
+                    <span class="text-xl font-bold text-gray-800">WriteFlow</span>
+                </div>
+                <p class="text-gray-600 mb-4">
+                    AI-powered English writing correction platform
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        let currentLanguage = 'zh';
+        let isCorrecting = false;
+        let currentTab = 'writing';
+        let trendChart = null;
+        let radarChart = null;
+        
+        // 新增元素获取
+        const historyBtn = document.getElementById('history-btn');
+        const historySidebar = document.getElementById('history-sidebar');
+        const closeHistoryBtn = document.getElementById('close-history-btn');
+        const historyOverlay = document.getElementById('history-overlay');
+        const historyListContainer = document.getElementById('history-list-container');
+        const explanationTooltip = document.getElementById('explanation-tooltip');
+
+        const tabDiff = document.getElementById('tab-diff');
+        const tabPolish = document.getElementById('tab-polish');
+        const diffViewContainer = document.getElementById('diff-view-container');
+        const polishViewContainer = document.getElementById('polish-view-container');
+        const diffView = document.getElementById('diff-view');
+        const polishedContent = document.getElementById('polished-content');
+
+
+        // Language translations
+        const translations = {
+            ko: {
+                'header-subtitle': 'AI 영어 작문 교정',
+                'nav-writing': '작문 연습',
+                'nav-progress': '진도 추적',
+                'main-title': '영어 작문 AI 교정',
+                'main-description': 'AI가 당신의 영어 작문을 교정하고 상세한 피드백을 제공합니다.',
+                'input-title': '영어 작문 입력',
+                'input-placeholder': '여기에 영어로 작문해보세요...\n\n예시:\nI think that technology has changed our lives in many ways. First of all, it makes communication easier and faster. We can talk to people all over the world instantly through teh internet.',
+                'word-count-label': '단어 수',
+                'correct-btn-text': '교정하기',
+                'correcting-text': '교정 중...',
+                'corrected-title': '교정된 내용',
+                'feedback-title': '상세 피드백',
+                'overall-score-label': '전체 점수',
+                'grammar-score-label': '문법 점수',
+                'vocabulary-score-label': '어휘 점수',
+                'coherence-score-label': '일관성 점수',
+                'explanation-title': '전체 평가',
+                'corrections-title': '교정 사항',
+                'suggestions-title': '개선 제안',
+                'error-empty': '작문 내용을 입력해주세요.',
+                'error-server': 'AI 교정 중 오류가 발생했습니다. 다시 시도해주세요.',
+                'progress-title': '학습 진도 추적',
+                'progress-description': '당신의 영어 작문 실력 향상을 시각적으로 확인하세요',
+                'total-writings-label': '총 작문 수',
+                'avg-score-label': '평균 점수',
+                'best-score-label': '최고 점수',
+                'days-active-label': '학습 일수',
+                'trend-chart-title': '점수 추이',
+                'radar-chart-title': '역량 분석',
+                'weak-areas-title': '개선 필요 영역',
+                'improvement-title': '향상된 영역'
+            },
+            zh: {
+                'header-subtitle': 'AI英语写作批改',
+                'nav-writing': '写作练习',
+                'nav-progress': '进度追踪',
+                'main-title': '英语写作AI批改',
+                'main-description': 'AI将为您批改英语写作并提供详细反馈。',
+                'input-title': '英语写作输入',
+                'input-placeholder': '请在这里用英语写作...\n\n示例:\nI think that technology has changed our lives in many ways. First of all, it makes communication easier and faster. We can talk to people all over the world instantly through teh internet.',
+                'word-count-label': '字数',
+                'correct-btn-text': '批改',
+                'correcting-text': '批改中...',
+                'corrected-title': '批改后的内容',
+                'feedback-title': '详细反馈',
+                'overall-score-label': '总分',
+                'grammar-score-label': '语法分数',
+                'vocabulary-score-label': '词汇分数',
+                'coherence-score-label': '连贯性分数',
+                'explanation-title': '总体评价',
+                'corrections-title': '批改事项',
+                'suggestions-title': '改进建议',
+                'error-empty': '请输入写作内容。',
+                'error-server': 'AI批改过程中出现错误，请重试。',
+                'progress-title': '学习进度追踪',
+                'progress-description': '可视化您的英语写作技能提升',
+                'total-writings-label': '总写作数',
+                'avg-score-label': '平均分数',
+                'best-score-label': '最高分数',
+                'days-active-label': '学习天数',
+                'trend-chart-title': '分数趋势',
+                'radar-chart-title': '能力分析',
+                'weak-areas-title': '需要改进的领域',
+                'improvement-title': '改进的领域'
+            }
+        };
+
+        function setLanguage(lang) {
+            currentLanguage = lang;
+            
+            // Update button states
+            document.getElementById('btn-ko').className = lang === 'ko' 
+                ? 'px-3 py-1 rounded-md text-sm font-medium transition-colors bg-white text-blue-600 shadow-sm'
+                : 'px-3 py-1 rounded-md text-sm font-medium transition-colors text-gray-600 hover:text-gray-800';
+            document.getElementById('btn-zh').className = lang === 'zh' 
+                ? 'px-3 py-1 rounded-md text-sm font-medium transition-colors bg-white text-blue-600 shadow-sm'
+                : 'px-3 py-1 rounded-md text-sm font-medium transition-colors text-gray-600 hover:text-gray-800';
+
+            // Update text content
+            const t = translations[lang];
+            Object.keys(t).forEach(key => {
+                const element = document.getElementById(key);
+                if (element) {
+                    element.textContent = t[key];
+                }
+            });
+
+            // Update placeholder
+            if (document.getElementById('writing-input')) {
+                document.getElementById('writing-input').placeholder = t['input-placeholder'];
+            }
+
+            // Update correct button text
+            if (document.getElementById('correct-btn-text')) {
+                document.getElementById('correct-btn-text').textContent = isCorrecting ? t['correcting-text'] : t['correct-btn-text'];
+            }
+
+            // Re-render charts if on progress tab
+            if (currentTab === 'progress') {
+                renderProgressCharts();
+            }
+        }
+
+        function switchTab(tab) {
+            currentTab = tab;
+            
+            // Update tab buttons
+            document.getElementById('tab-writing').className = tab === 'writing'
+                ? 'nav-tab active px-6 py-3 font-medium text-gray-700 rounded-t-lg'
+                : 'nav-tab px-6 py-3 font-medium text-gray-700 rounded-t-lg';
+            document.getElementById('tab-progress').className = tab === 'progress'
+                ? 'nav-tab active px-6 py-3 font-medium text-gray-700 rounded-t-lg'
+                : 'nav-tab px-6 py-3 font-medium text-gray-700 rounded-t-lg';
+
+            // Show/hide content
+            document.getElementById('content-writing').style.display = tab === 'writing' ? 'block' : 'none';
+            document.getElementById('content-progress').style.display = tab === 'progress' ? 'block' : 'none';
+
+            if (tab === 'progress') {
+                renderProgressCharts();
+            }
+        }
+
+        function updateWordCount() {
+            const content = document.getElementById('writing-input').value;
+            const wordCount = content.trim().split(/\s+/).filter(word => word.length > 0).length;
+            document.getElementById('word-count').textContent = wordCount;
+        }
+
+        function showError(message) {
+            document.getElementById('error-text').textContent = message;
+            document.getElementById('error-message').classList.remove('hidden');
+            setTimeout(() => {
+                document.getElementById('error-message').classList.add('hidden');
+            }, 5000);
+        }
+
+        function hideError() {
+            document.getElementById('error-message').classList.add('hidden');
+        }
+
+        function setLoading(loading) {
+            isCorrecting = loading;
+            const btn = document.getElementById('correct-btn');
+            const btnText = document.getElementById('correct-btn-text');
+            
+            if (loading) {
+                btn.disabled = true;
+                btn.className = btn.className.replace('hover:from-blue-700 hover:to-purple-700', 'opacity-50 cursor-not-allowed');
+                btnText.textContent = translations[currentLanguage]['correcting-text'];
+                btn.innerHTML = '<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i><span>' + btnText.textContent + '</span>';
+            } else {
+                btn.disabled = false;
+                btn.className = btn.className.replace('opacity-50 cursor-not-allowed', 'hover:from-blue-700 hover:to-purple-700');
+                btnText.textContent = translations[currentLanguage]['correct-btn-text'];
+                btn.innerHTML = '<i data-lucide="send" class="w-5 h-5"></i><span>' + btnText.textContent + '</span>';
+            }
+            lucide.createIcons();
+        }
+
+        function getScoreColor(score) {
+            if (score >= 90) return 'text-green-600';
+            if (score >= 80) return 'text-blue-600';
+            if (score >= 70) return 'text-yellow-600';
+            return 'text-red-600';
+        }
+
+        function getScoreBg(score) {
+            if (score >= 90) return 'bg-green-100';
+            if (score >= 80) return 'bg-blue-100';
+            if (score >= 70) return 'bg-yellow-100';
+            return 'bg-red-100';
+        }
+
+        async function handleCorrection() {
+            const content = document.getElementById('writing-input').value.trim();
+            
+            if (!content) {
+                showError(translations[currentLanguage]['error-empty']);
+                return;
+            }
+
+            setLoading(true);
+            hideError();
+
+            try {
+                // Call our own backend server
+                const response = await fetch('/api/correct', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        content: content,
+                        nativeLanguage: currentLanguage
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    // Use error message from server if available
+                    const errorMessage = data.error || translations[currentLanguage]['error-server'];
+                    throw new Error(errorMessage);
+                }
+
+                const fullResult = { ...data, original_content: content, timestamp: new Date().toISOString() };
+                displayResults(fullResult);
+                saveCorrectionToHistory(fullResult);
+
+            } catch (error) {
+                console.error('Error:', error);
+                showError(error.message);
+                document.getElementById('corrected-section').classList.add('hidden');
+                document.getElementById('feedback-section').classList.add('hidden');
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        function displayResults(data) {
+            // Show corrected content
+            diffView.innerHTML = data.diff_html;
+            polishedContent.textContent = data.polished_content;
+            document.getElementById('corrected-section').classList.remove('hidden');
+            switchResultView('diff'); // 默认显示纠错视图
+
+
+            const feedback = data.feedback;
+            
+            // Update score displays
+            document.getElementById('overall-score-value').textContent = feedback.overall_score;
+            document.getElementById('grammar-score-value').textContent = feedback.grammar_score;
+            document.getElementById('vocabulary-score-value').textContent = feedback.vocabulary_score;
+            document.getElementById('coherence-score-value').textContent = feedback.coherence_score;
+
+            // Update score colors
+            const scores = [
+                { element: 'overall-score', score: feedback.overall_score },
+                { element: 'grammar-score', score: feedback.grammar_score },
+                { element: 'vocabulary-score', score: feedback.vocabulary_score },
+                { element: 'coherence-score', score: feedback.coherence_score }
+            ];
+
+            scores.forEach(({ element, score }) => {
+                const el = document.getElementById(element);
+                el.className = el.className.replace(/bg-\w+-100/, getScoreBg(score));
+                const scoreValue = el.querySelector('[id$="-value"]');
+                scoreValue.className = scoreValue.className.replace(/text-\w+-600/, getScoreColor(score));
+            });
+
+            // Update explanation
+            document.getElementById('explanation-text').textContent = feedback.explanation;
+
+            // Update corrections
+            const correctionsList = document.getElementById('corrections-list');
+            correctionsList.innerHTML = '';
+            
+            if (feedback.corrections && feedback.corrections.length > 0) {
+                document.getElementById('corrections-section').classList.remove('hidden');
+                feedback.corrections.forEach(correction => {
+                    const correctionDiv = document.createElement('div');
+                    correctionDiv.className = 'bg-red-50 border border-red-200 rounded-xl p-4';
+                    correctionDiv.innerHTML = `
+                        <div class="flex items-start space-x-3 mb-2">
+                            <span class="bg-red-100 text-red-700 px-2 py-1 rounded text-sm font-medium">${correction.original}</span>
+                            <span class="text-gray-400">→</span>
+                            <span class="bg-green-100 text-green-700 px-2 py-1 rounded text-sm font-medium">${correction.corrected}</span>
+                        </div>
+                        <p class="text-sm text-gray-600">${correction.explanation}</p>
+                    `;
+                    correctionsList.appendChild(correctionDiv);
+                });
+            } else {
+                document.getElementById('corrections-section').classList.add('hidden');
+            }
+
+            // Update suggestions
+            const suggestionsList = document.getElementById('suggestions-list');
+            suggestionsList.innerHTML = '';
+            
+            if (feedback.suggestions && feedback.suggestions.length > 0) {
+                feedback.suggestions.forEach(suggestion => {
+                    const li = document.createElement('li');
+                    li.className = 'flex items-start space-x-2 text-gray-700';
+                    li.innerHTML = `
+                        <span class="text-blue-500 mt-1">•</span>
+                        <span>${suggestion}</span>
+                    `;
+                    suggestionsList.appendChild(li);
+                });
+            }
+
+            document.getElementById('feedback-section').classList.remove('hidden');
+        }
+
+        // --- 新增功能：结果视图切换 ---
+        function switchResultView(view) {
+            if (view === 'diff') {
+                tabDiff.classList.add('text-blue-600', 'border-blue-600');
+                tabDiff.classList.remove('text-gray-500');
+                tabPolish.classList.add('text-gray-500');
+                tabPolish.classList.remove('text-blue-600', 'border-blue-600');
+                diffViewContainer.classList.remove('hidden');
+                polishViewContainer.classList.add('hidden');
+            } else {
+                tabPolish.classList.add('text-blue-600', 'border-blue-600');
+                tabPolish.classList.remove('text-gray-500');
+                tabDiff.classList.add('text-gray-500');
+                tabDiff.classList.remove('text-blue-600', 'border-blue-600');
+                polishViewContainer.classList.remove('hidden');
+                diffViewContainer.classList.add('hidden');
+            }
+        }
+        tabDiff.addEventListener('click', () => switchResultView('diff'));
+        tabPolish.addEventListener('click', () => switchResultView('polish'));
+
+        // --- 新增功能：错误解释Tooltip ---
+        document.body.addEventListener('mouseover', (e) => {
+            if (e.target.tagName === 'DEL' && e.target.dataset.explanation) {
+                explanationTooltip.textContent = e.target.dataset.explanation;
+                explanationTooltip.classList.remove('hidden');
+                const rect = e.target.getBoundingClientRect();
+                explanationTooltip.style.left = `${rect.left}px`;
+                explanationTooltip.style.top = `${rect.top - explanationTooltip.offsetHeight - 5}px`;
+            }
+        });
+        document.body.addEventListener('mouseout', (e) => {
+            if (e.target.tagName === 'DEL') {
+                explanationTooltip.classList.add('hidden');
+            }
+        });
+
+        // --- 新增功能：完整历史记录管理 ---
+        function getCorrectionHistory() {
+            return JSON.parse(localStorage.getItem('correctionHistory') || '[]');
+        }
+
+        function saveCorrectionHistory(history) {
+            localStorage.setItem('correctionHistory', JSON.stringify(history));
+        }
+
+        function saveCorrectionToHistory(result) {
+            let history = getCorrectionHistory();
+            history.unshift(result); // 添加到最前面
+            if (history.length > 20) history.pop(); // 最多保存20条
+            saveCorrectionHistory(history);
+        }
+
+        function renderCorrectionHistory() {
+            const history = getCorrectionHistory();
+            historyListContainer.innerHTML = '';
+            if (history.length === 0) {
+                historyListContainer.innerHTML = `<p class="text-center text-gray-500">暂无历史记录</p>`;
+                return;
+            }
+            history.forEach((item, index) => {
+                const date = new Date(item.timestamp).toLocaleString();
+                const div = document.createElement('div');
+                div.className = 'border rounded-lg p-3 cursor-pointer hover:bg-gray-50';
+                div.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div class="flex-grow">
+                            <p class="font-semibold truncate">${item.original_content}</p>
+                            <p class="text-xs text-gray-500">${date}</p>
+                        </div>
+                        <button data-index="${index}" class="delete-history-btn text-red-400 hover:text-red-600 ml-2 p-1">&times;</button>
+                    </div>
+                `;
+                div.querySelector('.flex-grow').addEventListener('click', () => {
+                    displayResults(item);
+                    closeHistorySidebar();
+                });
+                historyListContainer.appendChild(div);
+            });
+        }
+
+        historyListContainer.addEventListener('click', (e) => {
+            if (e.target.classList.contains('delete-history-btn')) {
+                const index = parseInt(e.target.dataset.index, 10);
+                let history = getCorrectionHistory();
+                history.splice(index, 1);
+                saveCorrectionHistory(history);
+                renderCorrectionHistory(); // 重新渲染
+            }
+        });
+
+        const openHistorySidebar = () => { renderCorrectionHistory(); historySidebar.classList.add('active'); historyOverlay.style.display = 'block'; };
+        const closeHistorySidebar = () => { historySidebar.classList.remove('active'); historyOverlay.style.display = 'none'; };
+
+        historyBtn.addEventListener('click', openHistorySidebar);
+        closeHistoryBtn.addEventListener('click', closeHistorySidebar);
+        historyOverlay.addEventListener('click', closeHistorySidebar);
+
+        function saveToHistory(feedback) {
+            // This function is now for chart data only
+            let history = JSON.parse(localStorage.getItem('writeflow_history') || '[]');
+            history.push({ timestamp: new Date().toISOString(), ...feedback });
+            if (history.length > 30) history = history.slice(-30);
+            localStorage.setItem('writeflow_history', JSON.stringify(history));
+        }
+
+        function renderProgressCharts() {
+            const history = JSON.parse(localStorage.getItem('writeflow_history') || '[]');
+            
+            if (history.length === 0) {
+                // Show empty state
+                document.getElementById('total-writings').textContent = '0';
+                document.getElementById('avg-score').textContent = '0';
+                document.getElementById('best-score').textContent = '0';
+                document.getElementById('days-active').textContent = '0';
+                
+                // Clear charts
+                if (trendChart) trendChart.destroy();
+                if (radarChart) radarChart.destroy();
+                
+                document.getElementById('weak-areas-list').innerHTML = `
+                    <p class="text-gray-500 text-center py-8">${currentLanguage === 'ko' ? '아직 작문 이력이 없습니다. 작문 연습을 시작해보세요!' : '还没有写作记录。开始写作练习吧！'}</p>
+                `;
+                document.getElementById('improvement-list').innerHTML = `
+                    <p class="text-gray-500 text-center py-8">${currentLanguage === 'ko' ? '아직 작문 이력이 없습니다.' : '还没有写作记录。'}</p>
+                `;
+                return;
+            }
+
+            // Calculate statistics
+            const totalWritings = history.length;
+            const avgScore = Math.round(history.reduce((sum, h) => sum + h.overall_score, 0) / totalWritings);
+            const bestScore = Math.max(...history.map(h => h.overall_score));
+            
+            // Calculate days active
+            const dates = [...new Set(history.map(h => h.timestamp.split('T')[0]))];
+            const daysActive = dates.length;
+
+            document.getElementById('total-writings').textContent = totalWritings;
+            document.getElementById('avg-score').textContent = avgScore;
+            document.getElementById('best-score').textContent = bestScore;
+            document.getElementById('days-active').textContent = daysActive;
+
+            // Prepare chart data
+            const recentHistory = history.slice(-10);
+            const labels = recentHistory.map((_, i) => `${currentLanguage === 'ko' ? '작문' : '写作'} ${i + 1}`);
+            const overallScores = recentHistory.map(h => h.overall_score);
+            const grammarScores = recentHistory.map(h => h.grammar_score);
+            const vocabularyScores = recentHistory.map(h => h.vocabulary_score);
+            const coherenceScores = recentHistory.map(h => h.coherence_score);
+
+            // Render Trend Chart
+            const trendCtx = document.getElementById('trendChart');
+            if (trendChart) trendChart.destroy();
+            trendChart = new Chart(trendCtx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: currentLanguage === 'ko' ? '전체' : '总分',
+                            data: overallScores,
+                            borderColor: 'rgb(99, 102, 241)',
+                            backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        },
+                        {
+                            label: currentLanguage === 'ko' ? '문법' : '语法',
+                            data: grammarScores,
+                            borderColor: 'rgb(34, 197, 94)',
+                            backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        },
+                        {
+                            label: currentLanguage === 'ko' ? '어휘' : '词汇',
+                            data: vocabularyScores,
+                            borderColor: 'rgb(249, 115, 22)',
+                            backgroundColor: 'rgba(249, 115, 22, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        },
+                        {
+                            label: currentLanguage === 'ko' ? '일관성' : '连贯性',
+                            data: coherenceScores,
+                            borderColor: 'rgb(168, 85, 247)',
+                            backgroundColor: 'rgba(168, 85, 247, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        title: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            min: 50,
+                            max: 100
+                        }
+                    }
+                }
+            });
+
+            // Render Radar Chart
+            const radarCtx = document.getElementById('radarChart');
+            if (radarChart) radarChart.destroy();
+            
+            const recent10 = history.slice(-10);
+            const avgGrammar = recent10.reduce((sum, h) => sum + h.grammar_score, 0) / recent10.length;
+            const avgVocabulary = recent10.reduce((sum, h) => sum + h.vocabulary_score, 0) / recent10.length;
+            const avgCoherence = recent10.reduce((sum, h) => sum + h.coherence_score, 0) / recent10.length;
+            const avgOverall = recent10.reduce((sum, h) => sum + h.overall_score, 0) / recent10.length;
+
+            radarChart = new Chart(radarCtx, {
+                type: 'radar',
+                data: {
+                    labels: [currentLanguage === 'ko' ? '문법' : '语法', currentLanguage === 'ko' ? '어휘' : '词汇', currentLanguage === 'ko' ? '일관성' : '连贯性', currentLanguage === 'ko' ? '전체' : '总分'],
+                    datasets: [
+                        {
+                            label: currentLanguage === 'ko' ? '평균 점수' : '平均分数',
+                            data: [avgGrammar, avgVocabulary, avgCoherence, avgOverall],
+                            backgroundColor: 'rgba(99, 102, 241, 0.2)',
+                            borderColor: 'rgb(99, 102, 241)',
+                            pointBackgroundColor: 'rgb(99, 102, 241)',
+                            pointBorderColor: '#fff',
+                            pointHoverBackgroundColor: '#fff',
+                            pointHoverBorderColor: 'rgb(99, 102, 241)'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            beginAtZero: false,
+                            min: 50,
+                            max: 100
+                        }
+                    }
+                }
+            });
+
+            // Analyze weak and improving areas
+            analyzeAreas(avgGrammar, avgVocabulary, avgCoherence, avgOverall);
+        }
+
+        function analyzeAreas(grammar, vocabulary, coherence, overall) {
+            const t = translations[currentLanguage];
+            const areas = [
+                { name: currentLanguage === 'ko' ? '문법' : '语法', score: grammar, key: 'grammar' },
+                { name: currentLanguage === 'ko' ? '어휘' : '词汇', score: vocabulary, key: 'vocabulary' },
+                { name: currentLanguage === 'ko' ? '일관성' : '连贯性', score: coherence, key: 'coherence' }
+            ];
+
+            // Sort by score
+            areas.sort((a, b) => a.score - b.score);
+
+            // Weak areas (lowest 2)
+            const weakAreasList = document.getElementById('weak-areas-list');
+            weakAreasList.innerHTML = '';
+            
+            areas.slice(0, 2).forEach(area => {
+                const progress = (area.score / 100) * 100;
+                const div = document.createElement('div');
+                div.className = 'bg-red-50 rounded-xl p-4 border border-red-200';
+                div.innerHTML = `
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="font-medium text-gray-800">${area.name}</span>
+                        <span class="text-lg font-bold text-red-600">${Math.round(area.score)}</span>
+                    </div>
+                    <div class="w-full bg-red-100 rounded-full h-2">
+                        <div class="bg-red-600 h-2 rounded-full" style="width: ${progress}%"></div>
+                    </div>
+                `;
+                weakAreasList.appendChild(div);
+            });
+
+            // Improving areas (highest 1)
+            const improvementList = document.getElementById('improvement-list');
+            improvementList.innerHTML = '';
+            
+            areas.slice(-1).forEach(area => {
+                const progress = (area.score / 100) * 100;
+                const div = document.createElement('div');
+                div.className = 'bg-green-50 rounded-xl p-4 border border-green-200';
+                div.innerHTML = `
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="font-medium text-gray-800">${area.name}</span>
+                        <span class="text-lg font-bold text-green-600">${Math.round(area.score)}</span>
+                    </div>
+                    <div class="w-full bg-green-100 rounded-full h-2">
+                        <div class="bg-green-600 h-2 rounded-full" style="width: ${progress}%"></div>
+                    </div>
+                `;
+                improvementList.appendChild(div);
+            });
+        }
+
+        // Initialize
+        // setLanguage('zh'); // 默认语言由HTML设置
+        lucide.createIcons();
+    </script>
+</body>
+</html>
