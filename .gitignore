@@ -17,3 +17,15 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
+# 在项目根目录（WriteFlow_Clean）执行
+cat >> .gitignore << EOF
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+.venv/
+venv/
+env/
+EOF
