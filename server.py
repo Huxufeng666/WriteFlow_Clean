@@ -34,9 +34,12 @@ class WriteFlowHandler(http.server.SimpleHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(b"OK")
             return
-        if self.path in ["/daily-sentence.html", "/email-mentor.html", "/essay-polish.html"]:
-            return super().do_GET()
-        # Serve static files (index.html, css, js, etc.)
+
+        # 如果用户访问根路径，则显示 splash.html 启动页面
+        if self.path == '/':
+            self.path = '/splash.html'
+
+        # 正常提供其他静态文件
         super().do_GET()
 
     def do_POST(self):
