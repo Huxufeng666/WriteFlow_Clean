@@ -97,7 +97,7 @@ def index():
 def serve_static(filename):
     # This serves files like style.css, common.js, etc.
     # It also serves html pages like email-mentor.html
-    if filename.endswith('.html') or filename.endswith('.css') or filename.endswith('.js'):
+    if filename.endswith(('.html', '.css', '.js')):
         return send_from_directory(app.static_folder, filename)
     return send_from_directory(app.static_folder, 'index.html') # Fallback to index
 

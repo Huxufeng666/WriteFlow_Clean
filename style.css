@@ -118,9 +118,6 @@ body.dark-mode {
 }
 
 /* 卡片渐变色 */
-.card-ai-writing {
-    background: linear-gradient(135deg, #4a90e2, #50e3c2);
-}
 .card-assistant {
     background: linear-gradient(135deg, #8A2BE2, #BA55D3);
 }
@@ -129,6 +126,9 @@ body.dark-mode {
 }
 .card-daily-quote {
     background: linear-gradient(135deg, #F5A623, #F8E71C);
+}
+.card-polish {
+    background: linear-gradient(135deg, #ff7e5f, #feb47b);
 }
 
 /* 统一调整渐变色卡片内的文字和图标颜色 */
