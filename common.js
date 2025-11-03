@@ -80,6 +80,31 @@ document.addEventListener('DOMContentLoaded', () => {
             'history-title': '历史记录',
             'history-empty': '暂无历史记录',
             'history-cleared-alert': '历史记录已清空',
+            // --- essay-polish.js specific ---
+            'polish-title': '作文润色',
+            'polish-subtitle': 'AI让你的文章更加流畅',
+            'polish-btn-full': '全文润色',
+            'polish-btn-sentence': '逐句润色',
+            'polish-features-title': '功能特点',
+            'polish-feature-1': '全文润色：一键优化整篇文章，提升整体质量',
+            'polish-feature-2': '逐句润色：精准对比每句修改，学习改进方法',
+            'polish-feature-3': '历史记录：保存所有润色记录，随时查看回顾',
+            'polish-placeholder': '输入或粘贴你的作文内容...\n\n提示：可以直接输入英文作文，系统会自动帮你润色优化',
+            'polish-clear': '清空',
+            'polish-camera': '拍照',
+            'polish-polishing': '润色中...',
+            'polish-start-full': '✨ 全文润色',
+            'polish-start-sentence': '📝 逐句润色',
+            'polish-result-title': '润色后',
+            'polish-copy': '复制',
+            'polish-copied': '已复制到剪贴板！',
+            'polish-re-polish': '🔄 重新润色',
+            'polish-original': '原文',
+            'polish-no-change': '此句无需修改',
+            'polish-export': '📤 导出对比',
+            'polish-apply': '✅ 应用修改',
+            'polish-history-title': '历史记录',
+            'polish-today': '今天',
         },
         ko: {
             // --- index.html specific ---
@@ -144,8 +169,40 @@ document.addEventListener('DOMContentLoaded', () => {
             'history-title': '방문 기록',
             'history-empty': '기록이 없습니다',
             'history-cleared-alert': '기록이 모두 삭제되었습니다',
+            // --- essay-polish.js specific ---
+            'polish-title': '에세이 교정',
+            'polish-subtitle': 'AI로 당신의 글을 더 유창하게',
+            'polish-btn-full': '전체 교정',
+            'polish-btn-sentence': '문장별 교정',
+            'polish-features-title': '기능 특징',
+            'polish-feature-1': '전체 교정: 한 번의 클릭으로 전체 글을 최적화하여 전반적인 품질 향상',
+            'polish-feature-2': '문장별 교정: 각 문장의 수정 사항을 정확하게 비교하여 개선 방법 학습',
+            'polish-feature-3': '기록: 모든 교정 기록을 저장하여 언제든지 검토 및 복습',
+            'polish-placeholder': '에세이 내용을 입력하거나 붙여넣으세요...\n\n팁: 영어 에세이를 직접 입력하면 시스템이 자동으로 교정 및 최적화합니다',
+            'polish-clear': '지우기',
+            'polish-camera': '사진 찍기',
+            'polish-polishing': '교정 중...',
+            'polish-start-full': '✨ 전체 교정',
+            'polish-start-sentence': '📝 문장별 교정',
+            'polish-result-title': '교정 후',
+            'polish-copy': '복사',
+            'polish-copied': '클립보드에 복사되었습니다!',
+            'polish-re-polish': '🔄 다시 교정하기',
+            'polish-original': '원문',
+            'polish-no-change': '이 문장은 수정할 필요가 없습니다',
+            'polish-export': '📤 비교 내보내기',
+            'polish-apply': '✅ 수정 적용',
+            'polish-history-title': '기록',
+            'polish-today': '오늘',
         }
     };
+
+    // 暴露一个全局函数，供 React 组件使用
+    window.getTranslations = () => {
+        const lang = localStorage.getItem('writeflow_language') || 'zh';
+        return translations[lang];
+    };
+
 
     function setLanguage(lang) {
         currentLanguage = lang;
@@ -176,6 +233,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 element.textContent = translations[lang][key];
             }
         });
+
+        // 如果 essay-polish.js 定义了更新函数，则调用它
+        if (typeof window.updateEssayPolishComponent === 'function') {
+            window.updateEssayPolishComponent(translations[lang]);
+        }
+
     }
 
     // --- 历史记录功能 ---

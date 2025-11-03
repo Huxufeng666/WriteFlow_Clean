@@ -1,4 +1,4 @@
-const { useState, useEffect } = React;
+const { useState, useEffect, useMemo } = React;
 
 // 由于 Lucide-React 在浏览器中不易直接使用，我们用 SVG 或文本替代
 const ChevronLeft = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>;
@@ -8,6 +8,7 @@ const Copy = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24
 const Camera = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>;
 
 const EssayPolishApp = () => {
+const [translations, setTranslations] = useState(window.getTranslations ? window.getTranslations() : {});
 const [currentView, setCurrentView] = useState('home'); // home, polish, history
 const [polishMode, setPolishMode] = useState('full'); // full or sentence
 const [essayText, setEssayText] = useState('');
@@ -15,6 +16,11 @@ const [polishedText, setPolishedText] = useState('');
 const [isPolishing, setIsPolishing] = useState(false);
 const [selectedSentences, setSelectedSentences] = useState([]);
 const [historyRecords, setHistoryRecords] = useState([]);
+
+const t = useMemo(() => {
+    // 如果 translations 为空，提供一个默认值以避免渲染错误
+    return translations || {};
+}, [translations]);
 
 // 示例作文文本
 const sampleEssay = ``;
@@ -25,21 +31,21 @@ const sampleHistory = [
 id: 1,
 originalText: "When peoples give their opinions about our dreams, it can be hard to keep going. First of all, we need to…",
 polishedText: "When people offer their opinions on our dreams, it can be challenging to persevere. Firstly, we must cultivate a strong belief in ourselves…",
-date: "今天",
+date: t['polish-today'] || "今天",
 type: "full"
 },
 {
 id: 2,
 originalText: "When peoples give their opinions about our dreams, it can be hard to keep going. First of all, we need to…",
 polishedText: "When people offer their opinions on our dreams, it can be challenging to persevere. Firstly, we must cultivate a strong belief in ourselves…",
-date: "今天",
+date: t['polish-today'] || "今天",
 type: "full"
 },
 {
 id: 3,
 originalText: "When peoples give their opinions about our dreams, it can be hard to keep going. First of all, we need to…",
 polishedText: "When people offer their opinions on our dreams, it can be challenging to persevere.",
-date: "今天",
+date: t['polish-today'] || "今天",
 type: "sentence"
 },
 {
@@ -67,6 +73,12 @@ type: "sentence"
 
 useEffect(() => {
 setHistoryRecords(sampleHistory);
+
+    // 将更新函数暴露给全局，以便 common.js 调用
+    window.updateEssayPolishComponent = (newTranslations) => {
+      setTranslations(newTranslations);
+    };
+
 }, []);
 
 // 模拟全文润色
@@ -91,7 +103,7 @@ Lastly, we must be ready to face adversity. Remaining determined and adapting wh
     id: Date.now(),
     originalText: essayText.substring(0, 100) + '...',
     polishedText: polished,
-    date: '今天',
+    date: t['polish-today'] || '今天',
     type: 'full'
   };
   setHistoryRecords([newRecord, ...historyRecords]);
@@ -148,7 +160,7 @@ setTimeout(() => {
     id: Date.now(),
     originalText: essayText.substring(0, 100) + '...',
     polishedText: sentences[0].polished,
-    date: '今天',
+    date: t['polish-today'] || '今天',
     type: 'sentence'
   };
   setHistoryRecords([newRecord, ...historyRecords]);
@@ -164,7 +176,7 @@ return (
 {/* 头部 */}
 <div className="bg-white p-4 flex items-center justify-between border-b shadow-sm">
 <div className="w-6"></div>
-<h1 className="text-xl font-bold text-gray-800">作文润色</h1>
+<h1 className="text-xl font-bold text-gray-800">{t['polish-title']}</h1>
 <Clock
 onClick={() => setCurrentView('history')}
 className="w-6 h-6 cursor-pointer text-gray-600 hover:text-gray-800 transition-colors"
@@ -180,12 +192,12 @@ className="w-6 h-6 cursor-pointer text-gray-600 hover:text-gray-800 transition-c
               <span className="text-white text-2xl">✨</span>
             </div>
             <div>
-              <h3 className="font-bold text-xl text-gray-800">作文润色</h3>
-              <p className="text-sm text-gray-600">AI让你的文章更加流畅</p>
+              <h3 className="font-bold text-xl text-gray-800">{t['polish-title']}</h3>
+              <p className="text-sm text-gray-600">{t['polish-subtitle']}</p>
             </div>
           </div>
 
-          <p className="text-gray-700 mb-6 text-sm leading-relaxed">
+          <p className="text-gray-700 mb-6 text-sm leading-relaxed" data-lang-key="polish-feature-1">
             一键润色，让作文更生动流畅，提升表达质量
           </p>
           
@@ -201,7 +213,7 @@ className="w-6 h-6 cursor-pointer text-gray-600 hover:text-gray-800 transition-c
             >
               <div className="flex items-center gap-3">
                 <span className="text-2xl">📄</span>
-                <span>全文润色</span>
+                <span>{t['polish-btn-full']}</span>
               </div>
               <span className="text-gray-400 group-hover:text-gray-600">→</span>
             </button>
@@ -216,7 +228,7 @@ className="w-6 h-6 cursor-pointer text-gray-600 hover:text-gray-800 transition-c
             >
               <div className="flex items-center gap-3">
                 <span className="text-2xl">📝</span>
-                <span>逐句润色</span>
+                <span>{t['polish-btn-sentence']}</span>
               </div>
               <span className="text-gray-400 group-hover:text-gray-600">→</span>
             </button>
@@ -227,20 +239,20 @@ className="w-6 h-6 cursor-pointer text-gray-600 hover:text-gray-800 transition-c
         <div className="mt-6 bg-white rounded-2xl p-5 shadow-sm">
           <h4 className="font-bold text-gray-800 mb-3 flex items-center gap-2">
             <span>💡</span>
-            <span>功能特点</span>
+            <span>{t['polish-features-title']}</span>
           </h4>
           <ul className="space-y-2 text-sm text-gray-600">
             <li className="flex items-start gap-2">
               <span className="text-yellow-500 mt-0.5">•</span>
-              <span>全文润色：一键优化整篇文章，提升整体质量</span>
+              <span>{t['polish-feature-1']}</span>
             </li>
             <li className="flex items-start gap-2">
               <span className="text-yellow-500 mt-0.5">•</span>
-              <span>逐句润色：精准对比每句修改，学习改进方法</span>
+              <span>{t['polish-feature-2']}</span>
             </li>
             <li className="flex items-start gap-2">
               <span className="text-yellow-500 mt-0.5">•</span>
-              <span>历史记录：保存所有润色记录，随时查看回顾</span>
+              <span>{t['polish-feature-3']}</span>
             </li>
           </ul>
         </div>
@@ -262,7 +274,7 @@ return (
 onClick={() => setCurrentView('home')}
 className="w-6 h-6 cursor-pointer hover:text-gray-600"
 />
-<h1 className="text-xl font-bold">作文润色</h1>
+<h1 className="text-xl font-bold">{t['polish-title']}</h1>
 <AlertTriangle className="w-6 h-6 text-gray-400" />
 </div>
 
@@ -277,7 +289,7 @@ className="w-6 h-6 cursor-pointer hover:text-gray-600"
                 : 'text-gray-600 hover:bg-gray-50'
             }`}
           >
-            全文润色
+            {t['polish-btn-full']}
           </button>
           <button
             onClick={() => setPolishMode('sentence')}
@@ -287,7 +299,7 @@ className="w-6 h-6 cursor-pointer hover:text-gray-600"
                 : 'text-gray-600 hover:bg-gray-50'
             }`}
           >
-            逐句润色
+            {t['polish-btn-sentence']}
           </button>
         </div>
       )}
@@ -297,8 +309,7 @@ className="w-6 h-6 cursor-pointer hover:text-gray-600"
         <div className="p-4">
           <textarea
             value={essayText}
-            onChange={(e) => setEssayText(e.target.value)}
-            placeholder="输入或粘贴你的作文内容...&#10;&#10;提示：可以直接输入英文作文，系统会自动帮你润色优化"
+            onChange={(e) => setEssayText(e.target.value)}            placeholder={t['polish-placeholder']}
             className="w-full h-96 p-5 border-2 border-yellow-200 rounded-2xl focus:outline-none focus:border-yellow-400 resize-none text-base leading-relaxed bg-white shadow-sm"
           />
           
@@ -306,7 +317,7 @@ className="w-6 h-6 cursor-pointer hover:text-gray-600"
             <button 
               onClick={() => {
                 if (essayText.trim()) {
-                  if (window.confirm('确定要清空所有内容吗？')) {
+                  if (window.confirm(t['polish-confirm-clear'] || '确定要清空所有内容吗？')) {
                     setEssayText('');
                   }
                 } else {
@@ -316,7 +327,7 @@ className="w-6 h-6 cursor-pointer hover:text-gray-600"
               className="flex items-center gap-2 px-5 py-3 bg-white border-2 border-gray-300 rounded-xl hover:bg-gray-50 transition-colors shadow-sm hover:border-gray-400"
             >
               <span>🗑️</span>
-              <span className="text-sm font-medium">清空</span>
+              <span className="text-sm font-medium">{t['polish-clear']}</span>
             </button>
             <button 
               onClick={() => {
@@ -329,11 +340,11 @@ className="w-6 h-6 cursor-pointer hover:text-gray-600"
                   const file = e.target.files[0];
                   if (file) {
                     // 模拟OCR识别
-                    alert('正在识别图片中的文字...');
+                    alert(t['polish-ocr-ing'] || '正在识别图片中的文字...');
                     setTimeout(() => {
                       const sampleRecognizedText = `When peoples give their opinions about our dreams, it can be hard to keep going. First of all, we need to have a strong believe in ourself. Our confidence is what make us strong to face what others say.`;
                       setEssayText(sampleRecognizedText);
-                      alert('✅ 识别完成！已将文字填入编辑框');
+                      alert(t['polish-ocr-done'] || '✅ 识别完成！已将文字填入编辑框');
                     }, 1500);
                   }
                 };
@@ -342,7 +353,7 @@ className="w-6 h-6 cursor-pointer hover:text-gray-600"
               className="flex items-center gap-2 px-5 py-3 bg-white border-2 border-gray-300 rounded-xl hover:bg-gray-50 transition-colors shadow-sm hover:border-gray-400"
             >
               <Camera className="w-4 h-4" />
-              <span className="text-sm font-medium">拍照</span>
+              <span className="text-sm font-medium">{t['polish-camera']}</span>
             </button>
           </div>
 
@@ -358,10 +369,10 @@ className="w-6 h-6 cursor-pointer hover:text-gray-600"
             {isPolishing ? (
               <span className="flex items-center justify-center gap-2">
                 <span className="animate-spin">⏳</span>
-                润色中...
+                {t['polish-polishing']}
               </span>
             ) : (
-              polishMode === 'full' ? '✨ 全文润色' : '📝 逐句润色'
+              polishMode === 'full' ? t['polish-start-full'] : t['polish-start-sentence']
             )}
           </button>
         </div>
@@ -373,10 +384,10 @@ className="w-6 h-6 cursor-pointer hover:text-gray-600"
           <div className="bg-white rounded-2xl p-5 shadow-md mb-4">
             <div className="flex gap-2 mb-4 border-b pb-3">
               <button className="px-5 py-2 bg-yellow-100 text-yellow-700 rounded-xl font-bold text-sm shadow-sm">
-                全文润色
+                {t['polish-btn-full']}
               </button>
               <button className="px-5 py-2 text-gray-500 rounded-xl font-medium text-sm">
-                逐句润色
+                {t['polish-btn-sentence']}
               </button>
             </div>
             
@@ -384,12 +395,12 @@ className="w-6 h-6 cursor-pointer hover:text-gray-600"
               <div className="flex items-center justify-between mb-3">
                 <h3 className="font-bold text-gray-800 flex items-center gap-2">
                   <span>✨</span>
-                  <span>润色后</span>
+                  <span>{t['polish-result-title']}</span>
                 </h3>
                 <button 
                   onClick={() => {
                     navigator.clipboard.writeText(polishedText);
-                    alert('已复制到剪贴板！');
+                    alert(t['polish-copied'] || '已复制到剪贴板！');
                   }}
                   className="flex items-center gap-1 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
                 >
@@ -412,7 +423,7 @@ className="w-6 h-6 cursor-pointer hover:text-gray-600"
             }}
             className="w-full py-4 bg-gradient-to-r from-yellow-400 to-orange-400 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all"
           >
-            🔄 重新润色
+            {t['polish-re-polish']}
           </button>
         </div>
       )}
@@ -423,10 +434,10 @@ className="w-6 h-6 cursor-pointer hover:text-gray-600"
           <div className="bg-white rounded-2xl p-5 shadow-md mb-4">
             <div className="flex gap-2 mb-4 border-b pb-3">
               <button className="px-5 py-2 text-gray-500 rounded-xl font-medium text-sm">
-                全文润色
+                {t['polish-btn-full']}
               </button>
               <button className="px-5 py-2 bg-yellow-100 text-yellow-700 rounded-xl font-bold text-sm shadow-sm">
-                逐句润色
+                {t['polish-btn-sentence']}
               </button>
             </div>
             
@@ -439,7 +450,7 @@ className="w-6 h-6 cursor-pointer hover:text-gray-600"
                       <div className="bg-orange-50 p-4 rounded-xl border-l-4 border-orange-400 shadow-sm">
                         <p className="text-xs text-orange-600 font-bold mb-2 flex items-center gap-1">
                           <span>📄</span>
-                          <span>原文</span>
+                          <span>{t['polish-original']}</span>
                         </p>
                         <p className="text-gray-800 leading-relaxed">{item.original}</p>
                       </div>
@@ -448,7 +459,7 @@ className="w-6 h-6 cursor-pointer hover:text-gray-600"
                       <div className="bg-blue-50 p-4 rounded-xl border-l-4 border-blue-400 shadow-sm">
                         <p className="text-xs text-blue-600 font-bold mb-2 flex items-center gap-1">
                           <span>✨</span>
-                          <span>润色后</span>
+                          <span>{t['polish-result-title']}</span>
                         </p>
                         <p className="text-gray-800 leading-relaxed">{item.polished}</p>
                       </div>
@@ -460,7 +471,7 @@ className="w-6 h-6 cursor-pointer hover:text-gray-600"
                         <span className="text-green-500">✨</span>
                         <span>{item.original}</span>
                       </p>
-                      <p className="text-xs text-green-600 mt-2">此句无需修改</p>
+                      <p className="text-xs text-green-600 mt-2">{t['polish-no-change']}</p>
                     </div>
                   )}
                 </div>
@@ -469,10 +480,10 @@ className="w-6 h-6 cursor-pointer hover:text-gray-600"
 
             <div className="flex gap-3">
               <button className="flex-1 py-3 bg-gray-100 text-gray-700 rounded-xl font-bold hover:bg-gray-200 transition-colors shadow-sm">
-                📤 导出对比
+                {t['polish-export']}
               </button>
               <button className="flex-1 py-3 bg-gradient-to-r from-yellow-400 to-orange-400 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all">
-                ✅ 应用修改
+                {t['polish-apply']}
               </button>
             </div>
           </div>
@@ -484,7 +495,7 @@ className="w-6 h-6 cursor-pointer hover:text-gray-600"
             }}
             className="w-full py-4 bg-white border-2 border-yellow-400 text-yellow-600 rounded-xl font-bold hover:bg-yellow-50 transition-colors shadow-sm"
           >
-            🔄 重新润色
+            {t['polish-re-polish']}
           </button>
         </div>
       )}
@@ -505,7 +516,7 @@ return (
 onClick={() => setCurrentView('home')}
 className="w-6 h-6 cursor-pointer hover:text-gray-600"
 />
-<h1 className="text-xl font-bold">历史记录</h1>
+<h1 className="text-xl font-bold">{t['polish-history-title']}</h1>
 <div className="w-6" />
 </div>
 
@@ -523,14 +534,14 @@ className="w-6 h-6 cursor-pointer hover:text-gray-600"
                   ? 'bg-yellow-100 text-yellow-700 border border-yellow-200'
                   : 'bg-blue-100 text-blue-700 border border-blue-200'
               }`}>
-                {record.type === 'full' ? '📄 全文润色' : '📝 逐句润色'}
+                {record.type === 'full' ? `📄 ${t['polish-btn-full']}` : `📝 ${t['polish-btn-sentence']}`}
               </span>
               <span className="text-xs text-gray-500 font-medium">{record.date}</span>
             </div>
             
             {/* 原文预览 */}
             <div className="mb-3">
-              <p className="text-xs text-gray-500 mb-1 font-medium">原文：</p>
+              <p className="text-xs text-gray-500 mb-1 font-medium">{t['polish-original']}:</p>
               <p className="text-sm text-gray-700 line-clamp-2 leading-relaxed">
                 {record.originalText}
               </p>
@@ -541,7 +552,7 @@ className="w-6 h-6 cursor-pointer hover:text-gray-600"
               <div className="pt-3 border-t border-gray-100">
                 <p className="text-xs text-gray-500 mb-1 font-medium flex items-center gap-1">
                   <span>✨</span>
-                  <span>润色结果：</span>
+                  <span>{t['polish-result-title']}:</span>
                 </p>
                 <p className="text-sm text-gray-600 line-clamp-2 leading-relaxed bg-gradient-to-r from-blue-50 to-purple-50 p-2 rounded-lg">
                   {record.polishedText.substring(0, 80)}...
@@ -556,13 +567,13 @@ className="w-6 h-6 cursor-pointer hover:text-gray-600"
       {historyRecords.length === 0 && (
         <div className="flex flex-col items-center justify-center h-96">
           <div className="text-7xl mb-4">📝</div>
-          <p className="text-gray-500 font-medium mb-2">还没有历史记录</p>
-          <p className="text-sm text-gray-400">开始使用润色功能吧！</p>
+          <p className="text-gray-500 font-medium mb-2">{t['polish-no-history'] || '还没有历史记录'}</p>
+          <p className="text-sm text-gray-400">{t['polish-no-history-prompt'] || '开始使用润色功能吧！'}</p>
           <button
             onClick={() => setCurrentView('home')}
             className="mt-6 px-6 py-3 bg-yellow-400 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all"
           >
-            开始润色
+            {t['polish-start-polishing'] || '开始润色'}
           </button>
         </div>
       )}
