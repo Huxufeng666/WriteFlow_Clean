@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WriteFlow - 每日一句</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <style>
+        body {
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+        .fade-in { animation: fadeIn 0.5s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div id="app-container">
+        <!-- App content will be rendered here by JavaScript -->
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- 全局变量和Firebase配置 ---
+            // 替换这里的 null 为您从 Firebase 控制台复制的配置对象
+            const firebaseConfig = {
+              apiKey: "YOUR_API_KEY", // 替换成您的
+              authDomain: "YOUR_PROJECT_ID.firebaseapp.com", // 替换成您的
+              projectId: "YOUR_PROJECT_ID", // 替换成您的
+              storageBucket: "YOUR_PROJECT_ID.appspot.com", // 替换成您的
+              messagingSenderId: "YOUR_SENDER_ID", // 替换成您的
+              appId: "YOUR_APP_ID" // 替换成您的
+            };
+
+            // --- 模拟数据 ---
+            const mockSentences = [
+                {
+                    date: '2025.11.03', dayOfWeek: 'Monday', source: "卫报 (The Guardian)",
+                    sentence: "In one of the first studies to explore how hunger affects emotions as people go about their daily lives, psychologists found that the more hungry people felt, the more angry—or hangry—they became.",
+                    interaction: { likes: 51, favorites: 28, comments: 80, shares: 18 },
+                    translation: { chinese: "在调研饥饿会如何影响人们在日常生活中情绪的首批研究中，心理学家发现，人们越是感到饥饿，他们就会变得越生气，或者说越饥怒。", korean: "배고픔이 일상 생활에서 사람들의 감정에 어떤 영향을 미치는지 탐구한 첫 연구 중 하나에서, 심리학자들은 사람들이 배고픔을 더 느낄수록 더 화를 내거나 (배고파서 짜증내는 상태를 뜻하는) 행그리가 된다는 것을 발견했습니다。" },
+                    structure: [{ id: 1, type: "主干", text: "psychologists found that..." }, { id: 2, type: "宾语从句 (比较级)", text: "the more hungry people felt, the more angry—or hangry—they became" }],
+                    expressions: [{ id: 1, word: "explore", type: "v.", pronunciation: "[ɪkˈsplɔːr]", meaning: "调查研究, 探究" }, { id: 2, word: "hangry", type: "adj.", meaning: "饥怒的 (angry和hungry的合成词)" }],
+                    grammar: [{ id: 1, title: "句子主干和从句", content: "主句是'psychologists found that...'，宾语从句使用了'the more... the more...'结构，表示“越…就越…”的递进关系。" }, { id: 2, title: "不定式作定语", content: "'to explore how hunger affects emotions' 作定语修饰'studies'。" }]
+                },
+                {
+                    date: '2025.11.02', dayOfWeek: 'Sunday', source: "经济学人 (The Economist)",
+                    sentence: "The world's biggest companies are not just competing in the marketplace; they are increasingly vying for talent in a zero-sum war for the best minds.",
+                    interaction: { likes: 45, favorites: 15, comments: 50, shares: 12 },
+                    translation: { chinese: "全球最大的公司不仅在市场上竞争；它们正日益在人才争夺中展开一场零和博弈，以获取最优秀的人才。", korean: "세계 최대 기업들은 단순히 시장에서 경쟁하는 것이 아닙니다; 그들은 최고의 인재를 확보하기 위한 제로섬 전쟁에서 점점 더 인재 경쟁을 벌이고 있습니다." },
+                    structure: [{ id: 1, type: "主干", text: "companies are competing and vying" }, { id: 2, type: "状语", text: "in the marketplace / in a zero-sum war" }],
+                    expressions: [{ id: 1, word: "compete", type: "v.", pronunciation: "[kəmˈpiːt]", meaning: "竞争" }, { id: 2, word: "vying for", type: "phr.", pronunciation: "[ˈvaɪɪŋ fɔːr]", meaning: "争夺, 竞争 (常用于更激烈的竞争)" }, { id: 3, word: "zero-sum war", type: "n.", meaning: "零和博弈" }],
+                    grammar: [{ id: 1, title: "并列结构和省略", content: "'not just competing... they are increasingly vying...'，分号连接两个完整的句子，表达递进关系，后半句省略了重复的主语和系动词。" }, { id: 2, title: "介词短语作目的状语", content: "'for the best minds' 表明了争夺人才的目的。" }]
+                },
+                {
+                    date: '2025.11.01', dayOfWeek: 'Saturday', source: "China Daily",
+                    sentence: "Promoting inclusive and sustainable industrialization, and fostering innovation, are crucial for achieving economic growth.",
+                    interaction: { likes: 60, favorites: 30, comments: 90, shares: 25 },
+                    translation: { chinese: "促进包容性和可持续的工业化，以及培养创新，对于实现经济增长至关重要。", korean: "포용적이고 지속 가능한 산업화를 촉진하고 혁신을 육성하는 것은 경제 성장을 달성하는 데 매우 중요합니다." },
+                    structure: [{ id: 1, type: "主语", text: "Promoting... and fostering..." }, { id: 2, type: "系表结构", text: "are crucial" }, { id: 3, type: "介词短语", text: "for achieving economic growth" }],
+                    expressions: [{ id: 1, word: "inclusive", type: "adj.", pronunciation: "[ɪnˈkluːsɪv]", meaning: "包容的" }, { id: 2, word: "sustainable", type: "adj.", pronunciation: "[səˈsteɪnəbl]", meaning: "可持续的" }, { id: 3, word: "fostering", type: "v.", meaning: "培养, 促进" }],
+                    grammar: [{ id: 1, title: "动名词作主语", content: "'Promoting... and fostering...' 是由两个并列的动名词短语充当句子的复合主语，因此谓语动词使用复数形式'are'。" }, { id: 2, title: "介词for的用法", content: "'crucial for achieving...' 中，'for' 表示目的或用途，后面接动名词。" }]
+                },
+                {
+                    date: '2025.10.31', dayOfWeek: 'Friday', source: "卫报 (The Guardian)",
+                    sentence: "A crucial element of effective communication is not just about what you say, but how you listen and absorb the information around you.",
+                    interaction: { likes: 35, favorites: 10, comments: 40, shares: 8 },
+                    translation: { chinese: "有效沟通的关键要素不仅在于你说什么，更在于你如何倾听并吸收周围的信息。", korean: "효과적인 의사소통의 중요한 요소는 당신이 무엇을 말하느냐뿐만 아니라, 당신이 주변 정보를 어떻게 경청하고 흡수하느냐에 달려 있습니다." },
+                    structure: [], expressions: [], grammar: []
+                },
+            ];
+
+            // --- 全局状态 ---
+            let state = {
+                activeTab: 'translation',
+                db: null,
+                userId: null,
+                userName: null,
+                isAuthReady: false,
+                showPastReview: false,
+                currentDate: mockSentences[0].date,
+                comments: [],
+                commentsLoading: true,
+                filterByMe: false,
+            };
+
+            const appContainer = document.getElementById('app-container');
+
+            // --- 渲染函数 ---
+            function render() {
+                const currentData = mockSentences.find(s => s.date === state.currentDate) || mockSentences[0];
+                
+                appContainer.innerHTML = `
+                    <div class="min-h-screen bg-gray-50 font-sans">
+                        <!-- Header -->
+                        <div class="bg-gradient-to-br from-orange-500 to-red-400 shadow-xl pb-12 rounded-b-3xl">
+                            <header class="flex justify-between items-center p-4 pt-8 text-white">
+                                <a href="/"><i data-lucide="chevron-left" class="w-6 h-6"></i></a>
+                                <h1 class="text-xl font-bold">每日一句</h1>
+                                <div class="flex space-x-4">
+                                    <i data-lucide="book-open" class="w-6 h-6"></i>
+                                    <span class="text-white w-6 h-6 cursor-help">?</span>
+                                </div>
+                            </header>
+                            <div class="p-6 text-white">
+                                <div class="flex justify-between items-start">
+                                    <div class="space-y-1">
+                                        <p class="text-3xl font-extrabold">${currentData.date.slice(0, 10)}</p>
+                                        <p class="text-lg font-light">${currentData.dayOfWeek}</p>
+                                    </div>
+                                </div>
+                                <button id="past-review-btn" class="mt-6 flex items-center bg-white/30 hover:bg-white/40 text-white px-4 py-2 rounded-full text-base font-medium transition-colors shadow-md">
+                                    <i data-lucide="calendar" class="w-5 h-5 mr-2"></i>
+                                    往期回顾
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Main Content Card -->
+                        <div class="relative -mt-8 p-4 z-20">
+                            <div class="bg-white rounded-2xl shadow-xl p-5 mb-4">
+                                <p class="text-xl text-gray-800 leading-relaxed font-serif">${currentData.sentence}</p>
+                                <p class="text-right text-sm text-gray-500 mt-4">-- ${currentData.source}</p>
+                                <div class="flex justify-around items-center pt-4 mt-4 border-t border-gray-100">
+                                    ${renderInteractionButton('book-open', currentData.interaction.likes)}
+                                    ${renderInteractionButton('star', currentData.interaction.favorites)}
+                                    ${renderInteractionButton('message-square', currentData.interaction.comments)}
+                                    ${renderInteractionButton('share-2', currentData.interaction.shares)}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tabs and Content -->
+                        <div class="bg-white">
+                            ${renderTabs(state.activeTab)}
+                            <div class="p-4 pt-0 fade-in" id="content-area">
+                                ${renderContentArea(state.activeTab, currentData)}
+                            </div>
+                        </div>
+
+                        <!-- Modal -->
+                        ${state.showPastReview ? renderPastReviewModal() : ''}
+                    </div>
+                `;
+
+                lucide.createIcons();
+                addEventListeners();
+            }
+
+            function renderInteractionButton(icon, count) {
+                return `
+                    <button class="flex flex-col items-center space-y-1 text-gray-500 hover:text-orange-500 transition-colors">
+                        <i data-lucide="${icon}" class="w-5 h-5"></i>
+                        <span class="text-xs font-medium">${count}</span>
+                    </button>
+                `;
+            }
+
+            function renderTabs(activeTab) {
+                const tabs = [
+                    { id: 'translation', name: '参考译文' }, { id: 'structure', name: '句子结构' },
+                    { id: 'expressions', name: '必备表达' }, { id: 'grammar', name: '重点语法' },
+                    { id: 'discussion', name: '讨论区' },
+                ];
+                return `
+                    <div class="flex overflow-x-auto border-b border-gray-100 bg-white sticky top-0 z-10 shadow-sm px-4">
+                        ${tabs.map(tab => `
+                            <button data-tab-id="${tab.id}" class="tab-btn py-3 px-4 text-sm font-medium whitespace-nowrap transition-colors duration-200 relative ${activeTab === tab.id ? 'text-black font-semibold' : 'text-gray-500 hover:text-gray-700'}">
+                                ${tab.name}
+                                ${activeTab === tab.id ? '<span class="absolute bottom-0 left-1/2 -translate-x-1/2 w-5 h-0.5 bg-orange-600 rounded-full"></span>' : ''}
+                            </button>
+                        `).join('')}
+                    </div>
+                `;
+            }
+
+            function renderContentArea(activeTab, data) {
+                const titleClass = "text-xl font-bold text-gray-800 border-l-4 border-orange-500 pl-3 mb-4 mt-8";
+                const subTitleClass = "font-semibold text-lg text-orange-700 mb-2 border-b pb-1 border-orange-200";
+
+                switch (activeTab) {
+                    case 'translation':
+                        return `
+                            <div class="space-y-8">
+                                <h2 class="${titleClass}">参考译文 (韩文和中文)</h2>
+                                <div class="p-4 bg-orange-50/50 rounded-xl shadow-inner border border-orange-100">
+                                    <h3 class="${subTitleClass}">中文译文 (Chinese)</h3>
+                                    <p class="text-gray-800 leading-relaxed">${data.translation.chinese || '暂无中文译文'}</p>
+                                </div>
+                                <div class="p-4 bg-orange-50/50 rounded-xl shadow-inner border border-orange-100">
+                                    <h3 class="${subTitleClass}">韩文译文 (Korean)</h3>
+                                    <p class="text-gray-600 italic leading-relaxed">${data.translation.korean || "暂无韩文译文"}</p>
+                                </div>
+                            </div>`;
+                    case 'structure':
+                        return `
+                            <div class="space-y-4">
+                                <h2 class="${titleClass}">句子结构</h2>
+                                <div class="text-sm border p-3 rounded-xl bg-yellow-50/50 border-yellow-200">
+                                    <p class="font-bold text-orange-600 mb-1">原句：</p>
+                                    <p class="text-gray-800 leading-relaxed font-serif text-lg p-2 bg-white rounded-lg border border-gray-100">${data.sentence}</p>
+                                </div>
+                                ${data.structure.length > 0 ? data.structure.map(item => `
+                                    <div class="p-3 bg-white border-l-4 border-orange-500 shadow-md rounded-lg">
+                                        <span class="inline-block font-bold text-sm text-gray-800">${item.type}:</span>
+                                        <p class="text-gray-600 font-mono text-sm mt-1">${item.text}</p>
+                                    </div>
+                                `).join('') : '<p class="text-center text-gray-500 pt-10">暂无句子结构解析。</p>'}
+                            </div>`;
+                    case 'expressions':
+                         return `
+                            <div class="space-y-4">
+                                <h2 class="${titleClass}">必备表达</h2>
+                                ${data.expressions.length > 0 ? data.expressions.map(item => `
+                                    <div class="p-4 bg-white border border-gray-100 rounded-xl shadow-sm">
+                                        <div class="flex justify-between items-start">
+                                            <div class="flex flex-col">
+                                                <div class="text-xl font-bold text-gray-800">${item.word}</div>
+                                                ${item.pronunciation ? `<div class="text-sm text-gray-500 mt-1">${item.pronunciation}</div>` : ''}
+                                            </div>
+                                            <button class="text-gray-300 hover:text-orange-500 cursor-pointer p-1 rounded-full transition-colors"><i data-lucide="star" class="w-6 h-6"></i></button>
+                                        </div>
+                                        <p class="text-gray-600 mt-2">
+                                            <span class="font-semibold mr-2 text-sm text-orange-500">${item.type}</span>
+                                            ${item.meaning}
+                                        </p>
+                                    </div>
+                                `).join('') : '<p class="text-center text-gray-500 pt-10">暂无必备表达。</p>'}
+                            </div>`;
+                    case 'grammar':
+                        return `
+                            <div class="space-y-4">
+                                <h2 class="${titleClass}">重点语法</h2>
+                                ${data.grammar.length > 0 ? data.grammar.map((item, index) => `
+                                    <div class="p-4 bg-white border border-gray-200 rounded-xl shadow-sm">
+                                        <h4 class="font-bold text-orange-700 text-base mb-1 flex items-center">
+                                            <span class="w-5 h-5 mr-2 flex items-center justify-center text-sm font-mono text-white bg-orange-500 rounded-full">${index + 1}</span>
+                                            ${item.title}
+                                        </h4>
+                                        <p class="text-gray-700 text-sm leading-relaxed mt-2">${item.content}</p>
+                                    </div>
+                                `).join('') : '<p class="text-center text-gray-500 pt-10">暂无重点语法解析。</p>'}
+                            </div>`;
+                    case 'discussion':
+                        return renderDiscussionArea();
+                    default:
+                        return `<p class="p-4 text-center text-gray-500">选择一个 Tab 查看详细解析。</p>`;
+                }
+            }
+
+            function renderDiscussionArea() {
+                if (!state.isAuthReady || !state.db || !state.userId) {
+                    return `
+                        <div class="flex justify-center items-center h-40">
+                            <i data-lucide="loader-2" class="w-6 h-6 animate-spin text-orange-500 mr-2"></i>
+                            <span class="text-gray-500">正在连接讨论区...</span>
+                        </div>`;
+                }
+
+                const orangeAvatar = `
+                    <div class="w-8 h-8 flex-shrink-0 mr-3">
+                        <svg viewBox="0 0 100 100" class="w-full h-full">
+                            <circle cx="50" cy="50" r="45" fill="#FF9800"/><path d="M40 30 C 50 20, 60 20, 70 30" fill="none" stroke="#E65100" strokeWidth="5"/><circle cx="40" cy="45" r="4" fill="white"/><circle cx="60" cy="45" r="4" fill="white"/><path d="M40 70 Q 50 85, 60 70" fill="#E65100"/>
+                        </svg>
+                    </div>`;
+
+                let commentsHtml;
+                if (state.commentsLoading) {
+                    commentsHtml = `<div class="flex justify-center items-center h-40"><i data-lucide="loader-2" class="w-6 h-6 animate-spin text-orange-500"></i></div>`;
+                } else if (state.comments.length === 0) {
+                    commentsHtml = `<p class="text-center text-gray-500 py-10">${state.filterByMe ? "您还没有发表评论。" : "暂无评论，快来抢沙发吧！"}</p>`;
+                } else {
+                    const visibleComments = state.filterByMe ? state.comments.filter(c => c.userId === state.userId) : state.comments;
+                    commentsHtml = `
+                        <div class="space-y-5 p-4 max-h-[50vh] overflow-y-auto">
+                            ${visibleComments.map(comment => `
+                                <div class="pb-3 border-b border-gray-50 last:border-b-0">
+                                    <div class="flex items-start">
+                                        ${orangeAvatar}
+                                        <div class="flex-grow">
+                                            <div class="flex justify-between items-center">
+                                                <span class="font-semibold text-sm text-gray-900">${comment.userName}</span>
+                                                <span class="text-xs text-gray-400">${formatFirestoreTimestamp(comment.timestamp)}</span>
+                                            </div>
+                                            <p class="text-gray-700 mt-1 leading-relaxed text-sm">${comment.text}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>`;
+                }
+
+                return `
+                    <div class="bg-white min-h-[300px] border border-gray-100 rounded-xl shadow-lg mt-8">
+                        <div class="p-4 flex justify-between items-center border-b border-gray-100">
+                            <h3 class="text-xl font-bold text-gray-800 flex items-center">
+                                <i data-lucide="message-square" class="w-5 h-5 mr-2 text-orange-500"></i>讨论区 (${state.comments.length})
+                            </h3>
+                            <div class="flex items-center text-sm text-gray-500">
+                                <span class="mr-2">只看我</span>
+                                <input type="checkbox" id="filter-by-me-checkbox" ${state.filterByMe ? 'checked' : ''} class="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500 cursor-pointer"/>
+                            </div>
+                        </div>
+                        ${commentsHtml}
+                        <form id="comment-form" class="p-4 border-t border-gray-100 mt-4 flex gap-2">
+                            <input type="text" id="comment-input" placeholder="发表你的学习心得或疑问..." class="flex-grow p-3 border border-gray-300 rounded-full focus:ring-orange-500 focus:border-orange-500 text-sm"/>
+                            <button type="submit" class="bg-orange-500 text-white p-3 rounded-full shadow-md hover:bg-orange-600 transition duration-150 disabled:opacity-50 flex items-center justify-center">
+                                <i data-lucide="send" class="w-5 h-5"></i>
+                            </button>
+                        </form>
+                    </div>
+                `;
+            }
+
+            function renderPastReviewModal() {
+                const availableDates = mockSentences.map(s => s.date);
+                const today = new Date();
+                const currentYear = today.getFullYear();
+                const currentMonth = today.getMonth();
+                const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay();
+                const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+                const daysOfWeek = ['日', '一', '二', '三', '四', '五', '六'];
+
+                let dayCells = '';
+                for (let i = 0; i < firstDayOfMonth; i++) {
+                    dayCells += `<div class="py-3"></div>`;
+                }
+                for (let dayNum = 1; dayNum <= daysInMonth; dayNum++) {
+                    const month = currentMonth + 1;
+                    const dateKey = `${currentYear}.${month < 10 ? '0' : ''}${month}.${dayNum < 10 ? '0' : ''}${dayNum}`;
+                    const isToday = dayNum === today.getDate() && currentMonth === today.getMonth() && currentYear === today.getFullYear();
+                    const isAvailable = availableDates.includes(dateKey);
+
+                    dayCells += `
+                        <div class="py-3 flex justify-center items-center">
+                            <button data-date-key="${dateKey}" class="calendar-day-btn w-9 h-9 flex items-center justify-center rounded-full transition-colors duration-150 text-base font-medium
+                                ${isAvailable ? 'text-gray-800 hover:bg-orange-100 cursor-pointer' : 'text-gray-400 cursor-default'}
+                                ${isToday ? 'bg-orange-500 text-white shadow-lg font-bold' : ''}
+                                ${isAvailable && !isToday ? 'border border-orange-200 bg-white' : ''}"
+                                ${!isAvailable ? 'disabled' : ''}>
+                                ${dayNum}
+                            </button>
+                        </div>`;
+                }
+
+                return `
+                    <div id="past-review-modal" class="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-start justify-center p-4">
+                        <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm mt-8 transform transition-all fade-in">
+                            <div class="p-4 flex justify-between items-center border-b border-gray-100">
+                                <button id="close-modal-btn" class="text-gray-500 hover:text-gray-700 p-1"><i data-lucide="chevron-left" class="w-6 h-6"></i></button>
+                                <h2 class="text-xl font-bold text-gray-800">往期回顾 (免费)</h2>
+                                <button id="today-btn" class="text-orange-500 text-base font-medium">今天</button>
+                            </div>
+                            <div class="flex justify-between items-center p-4">
+                                <span class="font-bold text-xl text-gray-800">${currentYear}/${currentMonth + 1 < 10 ? '0' : ''}${currentMonth + 1}</span>
+                            </div>
+                            <div class="grid grid-cols-7 text-center text-sm font-medium border-t border-gray-100 px-2">
+                                ${daysOfWeek.map(day => `<div class="py-2 text-gray-400">${day}</div>`).join('')}
+                                ${dayCells}
+                            </div>
+                            <div class="p-4 text-center text-sm text-gray-500 border-t mt-4">点击标记的日期即可免费查看往期句子。</div>
+                        </div>
+                    </div>`;
+            }
+
+            // --- 事件监听 ---
+            function addEventListeners() {
+                // Tab buttons
+                document.querySelectorAll('.tab-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const tabId = e.currentTarget.dataset.tabId;
+                        state.activeTab = tabId;
+                        const currentData = mockSentences.find(s => s.date === state.currentDate) || mockSentences[0];
+                        document.getElementById('content-area').innerHTML = renderContentArea(tabId, currentData);
+                        lucide.createIcons();
+                        // Re-render tabs to update active state
+                        const tabsContainer = document.querySelector('.flex.overflow-x-auto');
+                        if (tabsContainer) tabsContainer.outerHTML = renderTabs(state.activeTab);
+                        addEventListeners(); // Re-add listeners for new tab buttons
+                    });
+                });
+
+                // Past review modal
+                const pastReviewBtn = document.getElementById('past-review-btn');
+                if (pastReviewBtn) {
+                    pastReviewBtn.addEventListener('click', () => {
+                        state.showPastReview = true;
+                        render();
+                    });
+                }
+
+                const modal = document.getElementById('past-review-modal');
+                if (modal) {
+                    document.getElementById('close-modal-btn').addEventListener('click', () => {
+                        state.showPastReview = false;
+                        render();
+                    });
+                    document.getElementById('today-btn').addEventListener('click', () => {
+                        state.currentDate = mockSentences[0].date;
+                        state.showPastReview = false;
+                        render();
+                    });
+                    document.querySelectorAll('.calendar-day-btn').forEach(btn => {
+                        btn.addEventListener('click', (e) => {
+                            state.currentDate = e.currentTarget.dataset.dateKey;
+                            state.showPastReview = false;
+                            render();
+                        });
+                    });
+                }
+
+                // Discussion Area
+                if (state.activeTab === 'discussion') {
+                    const commentForm = document.getElementById('comment-form');
+                    if (commentForm) {
+                        commentForm.addEventListener('submit', handleCommentSubmit);
+                    }
+                    const filterCheckbox = document.getElementById('filter-by-me-checkbox');
+                    if (filterCheckbox) {
+                        filterCheckbox.addEventListener('change', (e) => {
+                            state.filterByMe = e.target.checked;
+                            render(); // Re-render to apply filter
+                        });
+                    }
+                }
+            }
+
+            // --- Firebase 和讨论区逻辑 ---
+            let unsubscribeComments = null;
+
+            function initializeFirebase() {
+                if (!firebaseConfig) {
+                    console.error("Firebase config is missing.");
+                    state.isAuthReady = true;
+                    state.userId = crypto.randomUUID();
+                    state.userName = '匿名用户';
+                    render();
+                    return;
+                }
+                try {
+                    const app = firebase.initializeApp(firebaseConfig);
+                    state.db = firebase.firestore(app);
+                    const auth = firebase.auth(app);
+
+                    firebase.auth().onAuthStateChanged(user => {
+                        if (user) {
+                            state.userId = user.uid;
+                            state.userName = `用户${user.uid.substring(0, 8)}`;
+                        } else {
+                            state.userId = crypto.randomUUID();
+                            state.userName = '匿名用户';
+                        }
+                        state.isAuthReady = true;
+                        listenToComments();
+                        render();
+                    });
+
+                    firebase.auth().signInAnonymously().catch(error => {
+                        console.error("Firebase sign-in failed:", error);
+                    });
+
+                } catch (error) {
+                    console.error("Firebase initialization failed: ", error);
+                }
+            }
+
+            function listenToComments() {
+                if (unsubscribeComments) unsubscribeComments(); // Unsubscribe from old listener
+                if (!state.db || !state.userId) return;
+
+                const currentData = mockSentences.find(s => s.date === state.currentDate) || mockSentences[0];
+                const commentsCollectionPath = `artifacts/default-app-id/public/data/daily_sentence_comments_${currentData.date.replace(/\./g, '-')}`;
+
+                state.commentsLoading = true;
+                render();
+
+                unsubscribeComments = state.db.collection(commentsCollectionPath)
+                    .orderBy('timestamp', 'desc')
+                    .onSnapshot(snapshot => {
+                        state.comments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                        state.commentsLoading = false;
+                        if (state.activeTab === 'discussion') {
+                            render();
+                        }
+                    }, error => {
+                        console.error("Error listening to comments: ", error);
+                        state.commentsLoading = false;
+                        if (state.activeTab === 'discussion') {
+                            render();
+                        }
+                    });
+            }
+
+            async function handleCommentSubmit(e) {
+                e.preventDefault();
+                const input = document.getElementById('comment-input');
+                const text = input.value.trim();
+                if (!state.db || !state.userId || text === '') return;
+
+                const currentData = mockSentences.find(s => s.date === state.currentDate) || mockSentences[0];
+                const commentsCollectionPath = `artifacts/default-app-id/public/data/daily_sentence_comments_${currentData.date.replace(/\./g, '-')}`;
+
+                try {
+                    await state.db.collection(commentsCollectionPath).add({
+                        userId: state.userId,
+                        userName: state.userName,
+                        text: text,
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    });
+                    input.value = '';
+                } catch (error) {
+                    console.error("Error adding document: ", error);
+                }
+            }
+
+            function formatFirestoreTimestamp(timestamp) {
+                if (!timestamp || !timestamp.toDate) return "刚刚";
+                const date = timestamp.toDate();
+                const now = new Date();
+                const diffSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+                if (diffSeconds < 60) return `${diffSeconds}秒前`;
+                if (diffSeconds < 3600) return `${Math.floor(diffSeconds / 60)}分钟前`;
+
+                const isToday = date.toDateString() === now.toDateString();
+                if (isToday) {
+                    return date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', hour12: false });
+                } else {
+                    return date.toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit' }) + ' ' + date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', hour12: false });
+                }
+            }
+
+            // --- 初始化 ---
+            initializeFirebase();
+            render();
+        });
+    </script>
+</body>
+</html>

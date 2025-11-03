@@ -11,6 +11,7 @@ import os
 import sys
 import json
 import random
+import webbrowser
 
 class WriteFlowHandler(http.server.SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
@@ -129,16 +130,19 @@ class WriteFlowHandler(http.server.SimpleHTTPRequestHandler):
         self.wfile.write(json.dumps(data, ensure_ascii=False).encode("utf-8"))
 
 def main():
-    PORT = int(os.environ.get("PORT", 8000))
+    PORT = int(os.environ.get("PORT", 8001)) # 使用 8001 端口以避免常见冲突
+    URL = f"http://localhost:{PORT}"
 
     try:
         with socketserver.TCPServer(("0.0.0.0", PORT), WriteFlowHandler) as httpd:
             print("============================================================")
             print("WriteFlow AI English Correction Server")
-            print(f"Running on host 0.0.0.0, port {PORT}")
+            print(f"Server running! Access it at: {URL}")
             print("Health check: /health")
             print("API endpoint: POST /api/correct")
             print("============================================================")
+            
+            webbrowser.open(URL) # 在默认浏览器中打开 URL
             httpd.serve_forever()
 
     except OSError as e:
