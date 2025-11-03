@@ -1,3 +1,4 @@
+from flask import render_template, send_from_directory
 # import os
 # import json
 # import requests
@@ -78,7 +79,7 @@
 import os
 import json
 import requests
-import re
+import re # re is not used, but we keep it to avoid breaking changes if it was intended for something.
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 
@@ -86,6 +87,19 @@ app = Flask(__name__, static_folder='.', static_url_path='')
 CORS(app)
 
 API_KEY = os.environ.get('OPENAI_API_KEY')
+
+# --- Static File Serving ---
+@app.route('/')
+def index():
+    return send_from_directory(app.static_folder, 'index.html')
+
+@app.route('/<path:filename>')
+def serve_static(filename):
+    # This serves files like style.css, common.js, etc.
+    # It also serves html pages like email-mentor.html
+    if filename.endswith('.html') or filename.endswith('.css') or filename.endswith('.js'):
+        return send_from_directory(app.static_folder, filename)
+    return send_from_directory(app.static_folder, 'index.html') # Fallback to index
 
 def safe_json_parse(content):
     try:
@@ -116,20 +130,23 @@ def call_openai_api(content, native_language):
 
 @app.route('/api/correct', methods=['POST'])
 def handle_correction():
+    native_language = 'ko' # Default language
     try:
         data = request.get_json()
+        if not data:
+            return jsonify({'error': 'Invalid JSON payload'}), 400
+            
         content = data.get('content', '')
         native_language = data.get('nativeLanguage', 'ko')
 
         if not content.strip():
             msg = '작문 내용을 입력해주세요.' if native_language == 'ko' else '请输入写作内容。'
             return jsonify({'error': msg}), 400
-
         result = call_openai_api(content, native_language)
         return jsonify(result)
     except Exception as e:
         print(f"Error: {e}")
-        msg = 'AI 교정 중 오류가 발생했습니다。' if native_language == 'ko' else f'AI批改过程中出现错误: {e}'
+        msg = 'AI 교정 중 오류가 발생했습니다.' if native_language == 'ko' else f'AI批改过程中出现错误: {e}'
         return jsonify({'error': msg}), 500
 
 if __name__ == '__main__':
