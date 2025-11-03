@@ -132,10 +132,10 @@ def main():
     PORT = int(os.environ.get("PORT", 8000))
 
     try:
-        with socketserver.TCPServer(("127.0.0.1", PORT), WriteFlowHandler) as httpd:
+        with socketserver.TCPServer(("0.0.0.0", PORT), WriteFlowHandler) as httpd:
             print("============================================================")
             print("WriteFlow AI English Correction Server")
-            print(f"Running on: http://127.0.0.1:{PORT}")
+            print(f"Running on host 0.0.0.0, port {PORT}")
             print("Health check: /health")
             print("API endpoint: POST /api/correct")
             print("============================================================")
