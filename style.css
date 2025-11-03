@@ -100,11 +100,12 @@ body.dark-mode {
 
 /* 卡片容器和卡片 */
 .card-container {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    padding: 20px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
     gap: 20px;
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
 }
 
 .card {
@@ -112,9 +113,13 @@ body.dark-mode {
     box-shadow: 0 4px 8px var(--shadow-color);
     padding: 20px;
     text-align: center;
-    width: 220px;
     transition: transform 0.2s, box-shadow 0.2s, background-color 0.3s;
     cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 180px;
 }
 
 /* 卡片渐变色 */
@@ -277,190 +282,76 @@ input:checked + .slider:before { transform: translateX(22px); }
     z-index: 1001;
 }
 
-/* 响应式布局 */
-@media (max-width: 600px) {
+/* ======================================== */
+/*          响应式布局 (Responsive)         */
+/* ======================================== */
+
+@media (max-width: 1024px) {
+    .assistant-grid {
+        grid-template-columns: 1fr; /* 在平板尺寸上使用单列 */
+    }
+}
+
+@media (max-width: 768px) {
     .top-bar {
-        flex-wrap: wrap;
+        flex-direction: column;
         padding: 10px;
     }
+
     .title {
-        order: -1; /* 将标题放在最前 */
-        width: 100%;
-        text-align: center;
         margin-bottom: 10px;
-        font-size: 1.3em;
+        font-size: 1.4em;
     }
+
+    .learning-target, .menu {
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        margin-top: 5px;
+    }
+
+    .learning-target select {
+        flex-grow: 1;
+    }
+
+    .menu {
+        justify-content: flex-end;
+    }
+
     .card-container {
         padding: 15px;
         gap: 15px;
     }
-    .card {
-        width: calc(50% - 30px); /* 每行两个 */
-    }
-}
 
-/* ======================================== */
-/*  写作助手 (Email Mentor) 页面样式优化   */
-/* ======================================== */
-
-.correction-container {
-    padding: 20px;
-    max-width: 1400px;
-    margin: 20px auto;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-}
-
-.assistant-header {
-    text-align: center;
-    margin: 10px 0 20px 0;
-}
-
-.assistant-grid {
-    display: grid;
-    grid-template-columns: 1fr 1.5fr 1.8fr;
-    gap: 25px;
-    align-items: stretch;
-}
-
-.assistant-card {
-    background-color: var(--card-bg-color);
-    padding: 25px 30px;
-    border-radius: 12px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05), 0 8px 16px rgba(0,0,0,0.05);
-    transition: all 0.3s ease;
-    display: flex;
-    flex-direction: column;
-    border: 1px solid transparent;
-    backdrop-filter: blur(12px);
-}
-
-.assistant-header h2 {
-    margin-top: 0;
-    font-size: 2em;
-    color: var(--primary-color);
-}
-
-.assistant-header .description {
-    margin-bottom: 10px;
-    color: var(--text-color-light);
-    font-size: 1.1em;
-}
-
-.email-input-group.full-height {
-    flex-grow: 1;
-    display: flex;
-    flex-direction: column;
-}
-
-.email-input-group {
-    margin-bottom: 20px;
-}
-
-.email-input-group label {
-    display: block;
-    margin-bottom: 8px;
-    font-weight: 500;
-    color: var(--text-color);
-}
-
-.email-input-group input[type="text"],
-.email-input-group textarea {
-    flex-grow: 1; /* 让 textarea 填满剩余空间 */
-    padding: 12px 15px;
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    background-color: var(--bg-color);
-    color: var(--text-color);
-    font-size: 1em;
-    transition: border-color 0.3s, box-shadow 0.3s, background-color 0.3s;
-    width: 100%;
-    box-sizing: border-box;
-}
-
-.email-input-group input[type="text"]:focus,
-.email-input-group textarea:focus {
-    outline: none;
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.25);
-}
-
-.email-input-group select {
-    width: 100%;
-    padding: 12px 15px;
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    background-color: var(--bg-color);
-    color: var(--text-color);
-    font-size: 1em;
-    transition: border-color 0.3s, box-shadow 0.3s;
-    appearance: none; /* 移除默认箭头 */
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
-    background-repeat: no-repeat;
-    background-position: right 0.75rem center;
-    background-size: 16px 12px;
-}
-
-body.dark-mode .email-input-group select {
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23cccccc' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
-}
-
-.correction-btn {
-    width: 100%;
-    padding: 15px;
-    font-size: 1.1em;
-    font-weight: bold;
-    color: white;
-    background-image: linear-gradient(135deg, #8A2BE2, #4a90e2);
-    background-size: 200% 100%;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.4s ease;
-    margin-top: 10px;
-}
-
-.correction-btn:hover {
-    background-position: right center;
-    box-shadow: 0 4px 15px rgba(74, 144, 226, 0.4);
-    transform: translateY(-2px);
-}
-
-#assistant-middle-card {
-    border: 1px solid var(--primary-color);
-}
-
-#assistant-output-card {
-    background-color: var(--bg-color);
-}
-
-#assistant-output-card h3 {
-    margin-top: 0;
-    color: var(--primary-color);
-}
-
-.result-box {
-    background-color: var(--card-bg-color);
-    border-radius: 8px;
-    padding: 15px;
-}
-
-/* 响应式调整 */
-@media (max-width: 600px) {
     .correction-container {
         padding: 15px;
         margin: 15px auto;
     }
-    .assistant-grid {
-        grid-template-columns: 1fr; /* 在小屏幕上变为单列 */
-    }
+
     .assistant-card {
         padding: 20px;
     }
 }
-@media (max-width: 1024px) and (min-width: 601px) {
-    .assistant-grid {
-        grid-template-columns: 1fr; /* 在平板尺寸上也使用单列 */
+
+@media (max-width: 480px) {
+    .title {
+        font-size: 1.3em;
+    }
+
+    .card-container {
+        grid-template-columns: 1fr;
+    }
+
+    .lang-switcher {
+        padding: 2px;
+    }
+
+    .lang-btn {
+        padding: 4px 8px;
+        font-size: 0.8em;
+    }
+
+    .modal-content {
+        width: 95%;
     }
 }
